@@ -1,0 +1,82 @@
+// Banco de dados do NutriCRM.
+// Em desenvolvimento usamos SQLite (um arquivo local, zero configuração).
+// Quando for pra produção, trocamos o provider por "postgresql" sem mudar os modelos.
+
+// A URL do banco agora vem do .env (variável de ambiente): no seu Mac ela
+// aponta pro arquivo SQLite; em produção, apontará pro Postgres na nuvem
+// (aí também trocamos o provider para "postgresql").
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// A conta do nutricionista. Todo dado do sistema pertence a um nutricionista —
+// é isso que prepara o sistema para virar SaaS multi-usuário: basta filtrar
+// tudo por nutritionistId.
+model Nutritionist {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  passwordHash String? // hash bcrypt da senha — nunca guardamos a senha em si
+  createdAt    DateTime      @default(now())
+  patients     Patient[]
+  appointments Appointment[]
+}
+
+model Patient {
+  id             String        @id @default(cuid())
+  nutritionistId String
+  nutritionist   Nutritionist  @relation(fields: [nutritionistId], references: [id])
+  name           String
+  email          String?
+  phone          String?
+  birthDate      DateTime?
+  sex            String? // "F" | "M" | "Outro"
+  goal           String? // objetivo: emagrecimento, hipertrofia, saúde...
+  anamnesis      String? // histórico clínico / anamnese em texto livre
+  createdAt      DateTime      @default(now())
+  measurements   Measurement[]
+  appointments   Appointment[]
+  mealPlans      MealPlan[]
+}
+
+// Uma avaliação antropométrica (medidas de uma data).
+model Measurement {
+  id         String   @id @default(cuid())
+  patientId  String
+  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  date       DateTime @default(now())
+  weightKg   Float?
+  heightCm   Float?
+  bodyFatPct Float?
+  waistCm    Float?
+  hipCm      Float?
+  notes      String?
+}
+
+model Appointment {
+  id             String       @id @default(cuid())
+  nutritionistId String
+  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [id])
+  patientId      String
+  patient        Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  scheduledAt    DateTime
+  status         String       @default("agendada") // agendada | realizada | faltou | cancelada
+  notes          String?
+  createdAt      DateTime     @default(now())
+}
+
+// Plano alimentar. O conteúdo (refeições e alimentos) fica em JSON por enquanto;
+// quando o módulo evoluir, viram tabelas próprias (Meal, FoodItem).
+model MealPlan {
+  id        String   @id @default(cuid())
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  title     String
+  content   String   @default("[]") // JSON: [{ meal: "Café da manhã", items: ["..."] }]
+  createdAt DateTime @default(now())
+}
