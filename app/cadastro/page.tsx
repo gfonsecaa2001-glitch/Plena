@@ -12,7 +12,7 @@ export default async function SignupPage({
     <div className="auth-wrap">
       <div className="auth-card">
         <div className="auth-logo">
-          Nutri<span>CRM</span>
+          Plena<span>.</span>
         </div>
         <h1>Criar conta</h1>
         <p className="muted" style={{ marginTop: -6, fontSize: 14 }}>

@@ -1,7 +1,12 @@
-# NutriCRM — CRM para nutricionistas
+# Plena — CRM para nutricionistas
 
-SaaS de gestão de consultório para nutricionistas. Fase atual: MVP single-user
-com estrutura preparada para multi-tenancy (tudo já é filtrado por `nutritionistId`).
+SaaS de gestão de consultório para nutricionistas (nome de produto: **Plena**;
+a pasta e o repositório mantêm o nome técnico `nutricrm`). Multi-tenant: todo
+dado é filtrado por `nutritionistId`.
+
+Identidade visual: "verde orgânico sofisticado" — tokens em `app/globals.css`
+(oliva `#4a6b35`, marfim `#f5f4ec`, títulos em serifa). Cores de gráfico
+validadas p/ daltonismo: `#345c1f` / `#c9803f`.
 
 ## Rodando
 

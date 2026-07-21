@@ -12,7 +12,7 @@ export default async function LoginPage({
     <div className="auth-wrap">
       <div className="auth-card">
         <div className="auth-logo">
-          Nutri<span>CRM</span>
+          Plena<span>.</span>
         </div>
         <h1>Entrar</h1>
 

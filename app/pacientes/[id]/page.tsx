@@ -6,8 +6,9 @@ import { addMeasurement, addAppointment, createMealPlan } from "@/app/actions";
 import { parseMeals } from "@/lib/mealplan";
 import { LineChart, type ChartSeries } from "./line-chart";
 
-// Cores da paleta validada (script do guia de dataviz): série 1 azul, série 2 verde.
-const SERIES_COLORS = ["#2a78d6", "#008300"];
+// Cores da paleta validada (script do guia de dataviz — CVD e contraste ok
+// sobre o card #fdfdfa): série 1 verde-oliva, série 2 caramelo.
+const SERIES_COLORS = ["#345c1f", "#c9803f"];
 
 // Monta uma série do gráfico a partir das medições, pegando só as que têm o campo.
 function buildSeries(

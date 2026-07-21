@@ -5,8 +5,8 @@ import { logoutAction } from "@/app/auth-actions";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NutriCRM",
-  description: "CRM para nutricionistas",
+  title: "Plena — CRM para nutricionistas",
+  description: "Seu consultório de nutrição, organizado e pleno.",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -27,7 +27,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="shell">
           <aside className="sidebar">
             <div className="logo">
-              Nutri<span>CRM</span>
+              Plena<span>.</span>
             </div>
             <Link className="nav-item" href="/">
               Início

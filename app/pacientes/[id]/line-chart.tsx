@@ -99,18 +99,18 @@ export function LineChart({
           {/* grade e eixo y */}
           {ticks.map((v) => (
             <g key={v}>
-              <line x1={M.left} x2={W - M.right} y1={y(v)} y2={y(v)} stroke="#e1e0d9" strokeWidth={1} />
-              <text x={M.left - 6} y={y(v) + 3.5} textAnchor="end" fontSize={10.5} fill="#898781">
+              <line x1={M.left} x2={W - M.right} y1={y(v)} y2={y(v)} stroke="#e4e2d4" strokeWidth={1} />
+              <text x={M.left - 6} y={y(v) + 3.5} textAnchor="end" fontSize={10.5} fill="#7d8171">
                 {Number(v.toFixed(1))}
               </text>
             </g>
           ))}
 
           {/* eixo x: primeira e última data */}
-          <text x={M.left} y={H - 8} fontSize={10.5} fill="#898781">
+          <text x={M.left} y={H - 8} fontSize={10.5} fill="#7d8171">
             {formatDate(tMin)}
           </text>
-          <text x={W - M.right} y={H - 8} textAnchor="end" fontSize={10.5} fill="#898781">
+          <text x={W - M.right} y={H - 8} textAnchor="end" fontSize={10.5} fill="#7d8171">
             {formatDate(tMax)}
           </text>
 
@@ -121,7 +121,7 @@ export function LineChart({
               x2={x(hovered.time)}
               y1={M.top}
               y2={H - M.bottom}
-              stroke="#c3c2b7"
+              stroke="#b8b6a5"
               strokeWidth={1}
             />
           )}
@@ -154,7 +154,7 @@ export function LineChart({
                 y={y(s.points[s.points.length - 1].value) + 3.5}
                 fontSize={11}
                 fontWeight={600}
-                fill="#52514e"
+                fill="#5c6152"
               >
                 {series.length > 1
                   ? s.label
