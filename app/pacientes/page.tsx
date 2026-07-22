@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
+import { formatDateTime } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -82,10 +83,7 @@ export default async function PatientsPage({
                     <td>{lastMeasurement?.weightKg ? `${lastMeasurement.weightKg} kg` : "—"}</td>
                     <td>
                       {nextAppointment
-                        ? nextAppointment.scheduledAt.toLocaleString("pt-BR", {
-                            dateStyle: "short",
-                            timeStyle: "short",
-                          })
+                        ? formatDateTime(nextAppointment.scheduledAt)
                         : "—"}
                     </td>
                   </tr>

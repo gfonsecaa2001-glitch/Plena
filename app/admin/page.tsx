@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
+import { formatDate } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ function formatRelative(date: Date | null) {
   if (days === 0) return "hoje";
   if (days === 1) return "ontem";
   if (days < 30) return `há ${days} dias`;
-  return date.toLocaleDateString("pt-BR");
+  return formatDate(date);
 }
 
 export default async function AdminPage() {
@@ -127,7 +128,7 @@ export default async function AdminPage() {
                     </div>
                   </div>
                 </td>
-                <td>{a.createdAt.toLocaleDateString("pt-BR")}</td>
+                <td>{formatDate(a.createdAt)}</td>
                 <td>{formatRelative(a.lastLoginAt)}</td>
                 <td>{a._count.patients}</td>
                 <td>{a._count.appointments}</td>

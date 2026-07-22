@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
 import { addMeasurement, addAppointment, createMealPlan } from "@/app/actions";
 import { parseMeals } from "@/lib/mealplan";
+import { formatDate, formatDateTime } from "@/lib/datetime";
 import { LineChart, type ChartSeries } from "./line-chart";
 
 // Cores da paleta validada (script do guia de dataviz — CVD e contraste ok
@@ -183,7 +184,7 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
             <tbody>
               {patient.measurements.map((m) => (
                 <tr key={m.id}>
-                  <td>{m.date.toLocaleDateString("pt-BR")}</td>
+                  <td>{formatDate(m.date)}</td>
                   <td>{m.weightKg ? `${m.weightKg} kg` : "—"}</td>
                   <td>{m.heightCm ? `${m.heightCm} cm` : "—"}</td>
                   <td>{m.bodyFatPct ? `${m.bodyFatPct}%` : "—"}</td>
@@ -229,7 +230,7 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
                     </Link>
                   </td>
                   <td>{parseMeals(plan.content).length}</td>
-                  <td>{plan.createdAt.toLocaleDateString("pt-BR")}</td>
+                  <td>{formatDate(plan.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -269,7 +270,7 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
               {patient.appointments.map((a) => (
                 <tr key={a.id}>
                   <td>
-                    {a.scheduledAt.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                    {formatDateTime(a.scheduledAt)}
                   </td>
                   <td>
                     <span className={`badge ${a.status}`}>{a.status}</span>

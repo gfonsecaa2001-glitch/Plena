@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
 import { parseMeals } from "@/lib/mealplan";
+import { formatDate } from "@/lib/datetime";
 import { addMeal, addMealItem, removeMeal, removeMealItem, deleteMealPlan } from "@/app/actions";
 import { PrintButton } from "./print-button";
 
@@ -32,7 +33,7 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
             <Link href={`/pacientes/${plan.patientId}`}>
               <strong>{plan.patient.name}</strong>
             </Link>{" "}
-            · criado em {plan.createdAt.toLocaleDateString("pt-BR")}
+            · criado em {formatDate(plan.createdAt)}
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>

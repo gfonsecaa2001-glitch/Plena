@@ -2,21 +2,26 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "./prisma";
 
-// A promessa do dia 1, cumprida: esta função agora lê a sessão do usuário
-// logado. Como TODA consulta do app já filtrava por nutritionistId, trocar o
+// Retorna o nutricionista logado, ou null se não houver sessão válida.
+//
+// Repare que não basta existir um cookie de sessão: a conta precisa existir de
+// verdade no banco. Um cookie pode sobreviver à exclusão da conta — e se
+// confiássemos só nele, o usuário ficaria preso num vai-e-vem entre / e /login.
+export async function getCurrentNutritionistOrNull() {
+  const session = await auth();
+  if (!session?.user?.email) return null;
+
+  return prisma.nutritionist.findUnique({ where: { email: session.user.email } });
+}
+
+// A promessa do dia 1, cumprida: esta função lê a sessão do usuário logado.
+// Como TODA consulta do app já filtrava por nutritionistId, trocar o
 // "nutricionista demo" pelo usuário real transformou o sistema em multi-usuário
 // sem mudar mais nada.
 //
-// Ela também funciona como o "porteiro" do app: qualquer página que precisa de
-// dados chama esta função — e quem não está logado é mandado pro /login.
+// Ela também é o "porteiro": quem não está logado é mandado pro /login.
 export async function getCurrentNutritionist() {
-  const session = await auth();
-  if (!session?.user?.email) redirect("/login");
-
-  const nutritionist = await prisma.nutritionist.findUnique({
-    where: { email: session.user.email },
-  });
+  const nutritionist = await getCurrentNutritionistOrNull();
   if (!nutritionist) redirect("/login");
-
   return nutritionist;
 }

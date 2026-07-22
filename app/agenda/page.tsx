@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
 import { setAppointmentStatus } from "@/app/actions";
+import { formatDateTime } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export default async function AgendaPage() {
   const renderRows = (list: typeof appointments, showActions: boolean) =>
     list.map((a) => (
       <tr key={a.id}>
-        <td>{a.scheduledAt.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</td>
+        <td>{formatDateTime(a.scheduledAt)}</td>
         <td>
           <Link href={`/pacientes/${a.patientId}`}>
             <strong>{a.patient.name}</strong>

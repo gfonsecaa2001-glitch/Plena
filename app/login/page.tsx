@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getCurrentNutritionistOrNull } from "@/lib/tenant";
 import { loginAction } from "@/app/auth-actions";
 
 export default async function LoginPage({
@@ -8,8 +8,8 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ erro?: string }>;
 }) {
-  // Quem já está logado não precisa ver o login — vai direto pro início.
-  if (await auth()) redirect("/");
+  // Quem já está logado (com conta existente) vai direto pro início.
+  if (await getCurrentNutritionistOrNull()) redirect("/");
 
   const { erro } = await searchParams;
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getCurrentNutritionistOrNull } from "@/lib/tenant";
 import { signupAction } from "@/app/auth-actions";
 
 export default async function SignupPage({
@@ -8,7 +8,7 @@ export default async function SignupPage({
 }: {
   searchParams: Promise<{ erro?: string }>;
 }) {
-  if (await auth()) redirect("/");
+  if (await getCurrentNutritionistOrNull()) redirect("/");
 
   const { erro } = await searchParams;
 

@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
 import { parseMeals, serializeMeals } from "@/lib/mealplan";
+import { parseDateInput, parseDateTimeInput } from "@/lib/datetime";
 
 function optional(value: FormDataEntryValue | null): string | null {
   const s = value?.toString().trim();
@@ -54,7 +55,7 @@ export async function createPatient(formData: FormData) {
       sex: optional(formData.get("sex")),
       goal: optional(formData.get("goal")),
       anamnesis: optional(formData.get("anamnesis")),
-      birthDate: birthDate ? new Date(birthDate) : null,
+      birthDate: birthDate ? parseDateInput(birthDate) : null,
     },
   });
 
@@ -69,7 +70,7 @@ export async function addMeasurement(formData: FormData) {
   await prisma.measurement.create({
     data: {
       patientId,
-      date: date ? new Date(date) : new Date(),
+      date: date ? parseDateInput(date) : new Date(),
       weightKg: optionalNumber(formData.get("weightKg")),
       heightCm: optionalNumber(formData.get("heightCm")),
       bodyFatPct: optionalNumber(formData.get("bodyFatPct")),
@@ -93,7 +94,7 @@ export async function addAppointment(formData: FormData) {
     data: {
       nutritionistId: nutritionist.id,
       patientId,
-      scheduledAt: new Date(scheduledAt),
+      scheduledAt: parseDateTimeInput(scheduledAt),
       notes: optional(formData.get("notes")),
     },
   });

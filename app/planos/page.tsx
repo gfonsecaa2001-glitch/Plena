@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
 import { parseMeals } from "@/lib/mealplan";
+import { formatDate } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +52,7 @@ export default async function MealPlansPage() {
                     <Link href={`/pacientes/${plan.patientId}`}>{plan.patient.name}</Link>
                   </td>
                   <td>{parseMeals(plan.content).length}</td>
-                  <td>{plan.createdAt.toLocaleDateString("pt-BR")}</td>
+                  <td>{formatDate(plan.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
