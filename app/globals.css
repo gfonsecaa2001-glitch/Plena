@@ -124,6 +124,38 @@ h1, h2, h3, .stat, .logo, .auth-logo, .auth-brand h2 {
   vertical-align: middle;
 }
 
+.integration-head { display: flex; align-items: center; gap: 14px; }
+.integration-logo {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 21px;
+  flex-shrink: 0;
+}
+.integration-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.integration-benefits { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.integration-benefits li { font-size: 13.5px; color: #5c6152; display: flex; gap: 9px; align-items: center; }
+.integration-benefits li::before {
+  content: "✓";
+  width: 19px;
+  height: 19px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.muted-panel { opacity: 0.62; }
+.auth-error.success { background: #edf3e2; color: #3f6428; border-color: #dbe7c8; }
+
 .privacy-note {
   font-size: 13px;
   color: var(--muted);

@@ -41,6 +41,11 @@ const ITEMS = [
     label: "Planos alimentares",
     d: "M3 2v7a3 3 0 0 0 6 0V2M6 2v20M17 2c-2 2-3 4.5-3 7 0 2 1 3 3 3s3-1 3-3c0-2.5-1-5-3-7ZM17 12v10",
   },
+  {
+    href: "/integracoes",
+    label: "Integrações",
+    d: "M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7L12 19",
+  },
 ];
 
 export function SidebarNav({ isAdmin = false }: { isAdmin?: boolean }) {

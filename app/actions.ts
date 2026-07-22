@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
 import { parseMeals, serializeMeals } from "@/lib/mealplan";
 import { parseDateInput, parseDateTimeInput } from "@/lib/datetime";
+import { pushEvent, updateEvent, deleteEvent } from "@/lib/google-calendar";
 
 function optional(value: FormDataEntryValue | null): string | null {
   const s = value?.toString().trim();
@@ -86,21 +87,24 @@ export async function addMeasurement(formData: FormData) {
 export async function addAppointment(formData: FormData) {
   const nutritionist = await getCurrentNutritionist();
   const patientId = formData.get("patientId")!.toString();
-  if (!(await requireOwnPatient(patientId))) return;
+  const patient = await requireOwnPatient(patientId);
+  if (!patient) return;
   const scheduledAt = optional(formData.get("scheduledAt"));
   if (!scheduledAt) return;
 
-  await prisma.appointment.create({
-    data: {
-      nutritionistId: nutritionist.id,
-      patientId,
-      scheduledAt: parseDateTimeInput(scheduledAt),
-      notes: optional(formData.get("notes")),
-    },
+  const start = parseDateTimeInput(scheduledAt);
+  const notes = optional(formData.get("notes"));
+
+  const appointment = await prisma.appointment.create({
+    data: { nutritionistId: nutritionist.id, patientId, scheduledAt: start, notes },
   });
+
+  // Espelha no Google Agenda (se conectado). Nunca quebra o fluxo se falhar.
+  await pushEvent(nutritionist.id, appointment.id, patient.name, start, notes);
 
   revalidatePath(`/pacientes/${patientId}`);
   revalidatePath("/agenda");
+  revalidatePath("/");
 }
 
 export async function setAppointmentStatus(formData: FormData) {
@@ -110,6 +114,7 @@ export async function setAppointmentStatus(formData: FormData) {
   const nutritionist = await getCurrentNutritionist();
   const owned = await prisma.appointment.findFirst({
     where: { id, nutritionistId: nutritionist.id },
+    include: { patient: { select: { name: true } } },
   });
   if (!owned) return;
 
@@ -118,8 +123,36 @@ export async function setAppointmentStatus(formData: FormData) {
     data: { status },
   });
 
+  if (owned.googleEventId) {
+    await updateEvent(
+      nutritionist.id,
+      owned.googleEventId,
+      owned.patient.name,
+      owned.scheduledAt,
+      owned.notes,
+      status
+    );
+  }
+
   revalidatePath("/agenda");
   revalidatePath(`/pacientes/${appointment.patientId}`);
+  revalidatePath("/");
+}
+
+export async function disconnectGoogle() {
+  const nutritionist = await getCurrentNutritionist();
+
+  await prisma.nutritionist.update({
+    where: { id: nutritionist.id },
+    data: {
+      googleEmail: null,
+      googleAccessToken: null,
+      googleRefreshToken: null,
+      googleTokenExpiry: null,
+    },
+  });
+
+  revalidatePath("/integracoes");
 }
 
 // ---------- Planos alimentares ----------

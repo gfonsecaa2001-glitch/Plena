@@ -20,6 +20,13 @@ model Nutritionist {
   role         String        @default("user") // "user" | "admin" (admin vê o painel do negócio)
   lastLoginAt  DateTime? // atualizado a cada login, pra medir uso real
   createdAt    DateTime      @default(now())
+
+  // Conexão opcional com o Google Agenda. Fica separada do login de propósito:
+  // desconectar o calendário nunca pode derrubar o acesso à conta.
+  googleEmail        String? // qual conta Google está conectada (para exibir)
+  googleAccessToken  String?
+  googleRefreshToken String?
+  googleTokenExpiry  DateTime?
   patients     Patient[]
   appointments Appointment[]
 }
@@ -64,6 +71,7 @@ model Appointment {
   scheduledAt    DateTime
   status         String       @default("agendada") // agendada | realizada | faltou | cancelada
   notes          String?
+  googleEventId  String? // id do evento espelhado no Google Agenda (se conectado)
   createdAt      DateTime     @default(now())
 }
 
