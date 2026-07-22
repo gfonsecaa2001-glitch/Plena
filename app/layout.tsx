@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Fraunces, Inter } from "next/font/google";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -17,9 +18,14 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
+  // Páginas públicas (link de agendamento) nunca mostram o menu do sistema —
+  // quem as vê é o paciente, não o nutricionista.
+  const pathname = (await headers()).get("x-pathname") ?? "";
+  const isPublicPage = pathname.startsWith("/agendar");
 
-  // Sem sessão (telas de login/cadastro): sem menu lateral.
+  const session = isPublicPage ? null : await auth();
+
+  // Sem sessão (login/cadastro) ou página pública: sem menu lateral.
   if (!session?.user) {
     return (
       <html lang="pt-BR">

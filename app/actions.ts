@@ -11,6 +11,7 @@ import { getCurrentNutritionist } from "@/lib/tenant";
 import { parseMeals, serializeMeals } from "@/lib/mealplan";
 import { parseDateInput, parseDateTimeInput } from "@/lib/datetime";
 import { pushEvent, updateEvent, deleteEvent } from "@/lib/google-calendar";
+import { slugify } from "@/lib/booking";
 
 function optional(value: FormDataEntryValue | null): string | null {
   const s = value?.toString().trim();
@@ -137,6 +138,38 @@ export async function setAppointmentStatus(formData: FormData) {
   revalidatePath("/agenda");
   revalidatePath(`/pacientes/${appointment.patientId}`);
   revalidatePath("/");
+}
+
+export async function saveBookingSettings(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+
+  const days = ["1", "2", "3", "4", "5", "6", "7"].filter((d) => formData.get(`day-${d}`));
+  const start = Number(formData.get("start")) || 8;
+  const end = Number(formData.get("end")) || 18;
+  const slotMin = Number(formData.get("slotMin")) || 60;
+
+  let slug = slugify(optional(formData.get("slug")) ?? nutritionist.name);
+  if (!slug) slug = `nutri-${nutritionist.id.slice(-6)}`;
+
+  // O endereço precisa ser único: se já existe em outra conta, acrescenta um sufixo.
+  const taken = await prisma.nutritionist.findFirst({
+    where: { bookingSlug: slug, id: { not: nutritionist.id } },
+  });
+  if (taken) slug = `${slug}-${nutritionist.id.slice(-4)}`;
+
+  await prisma.nutritionist.update({
+    where: { id: nutritionist.id },
+    data: {
+      bookingSlug: slug,
+      bookingEnabled: Boolean(formData.get("enabled")),
+      bookingDays: days.length ? days.join(",") : "1,2,3,4,5",
+      bookingStart: Math.min(Math.max(start, 0), 23),
+      bookingEnd: Math.min(Math.max(end, start + 1), 24),
+      bookingSlotMin: [30, 45, 60, 90].includes(slotMin) ? slotMin : 60,
+    },
+  });
+
+  revalidatePath("/agendamento");
 }
 
 export async function disconnectGoogle() {

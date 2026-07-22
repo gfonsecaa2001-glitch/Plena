@@ -27,6 +27,14 @@ model Nutritionist {
   googleAccessToken  String?
   googleRefreshToken String?
   googleTokenExpiry  DateTime?
+
+  // Agendamento público: o paciente escolhe o horário sozinho por um link.
+  bookingSlug    String?  @unique // ex.: "gabriel-fonseca" → /agendar/gabriel-fonseca
+  bookingEnabled Boolean  @default(false)
+  bookingDays    String   @default("1,2,3,4,5") // 1=segunda … 7=domingo
+  bookingStart   Int      @default(8) // primeira hora atendida
+  bookingEnd     Int      @default(18) // última hora (exclusiva)
+  bookingSlotMin Int      @default(60) // duração de cada encaixe, em minutos
   patients     Patient[]
   appointments Appointment[]
 }
@@ -72,6 +80,7 @@ model Appointment {
   status         String       @default("agendada") // agendada | realizada | faltou | cancelada
   notes          String?
   googleEventId  String? // id do evento espelhado no Google Agenda (se conectado)
+  source         String       @default("interno") // "interno" | "publico" (link de agendamento)
   createdAt      DateTime     @default(now())
 }
 
