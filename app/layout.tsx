@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Fraunces, Inter } from "next/font/google";
 import { auth } from "@/auth";
 import { logoutAction } from "@/app/auth-actions";
+import { SidebarNav } from "./nav";
 import "./globals.css";
+
+// Fontes profissionais, servidas pelo próprio app (next/font baixa no build):
+// Fraunces (serifa com personalidade) pros títulos, Inter pro texto.
+const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-serif" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Plena — CRM para nutricionistas",
@@ -16,42 +22,38 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   if (!session?.user) {
     return (
       <html lang="pt-BR">
-        <body>{children}</body>
+        <body className={`${inter.variable} ${fraunces.variable}`}>{children}</body>
       </html>
     );
   }
 
+  const initials = (session.user.name ?? "?")
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   return (
     <html lang="pt-BR">
-      <body>
+      <body className={`${inter.variable} ${fraunces.variable}`}>
         <div className="shell">
           <aside className="sidebar">
             <div className="logo">
               Plena<span>.</span>
             </div>
-            <Link className="nav-item" href="/">
-              Início
-            </Link>
-            <Link className="nav-item" href="/pacientes">
-              Pacientes
-            </Link>
-            <Link className="nav-item" href="/agenda">
-              Agenda
-            </Link>
-            <Link className="nav-item" href="/planos">
-              Planos alimentares
-            </Link>
-            <div className="soon">
-              Financeiro<small>em breve</small>
-            </div>
+            <SidebarNav />
 
             <div className="sidebar-user">
-              <div className="sidebar-user-name">{session.user.name}</div>
-              <form action={logoutAction}>
-                <button className="sidebar-logout" type="submit">
-                  Sair
-                </button>
-              </form>
+              <div className="sidebar-avatar">{initials}</div>
+              <div className="sidebar-user-info">
+                <div className="sidebar-user-name">{session.user.name}</div>
+                <form action={logoutAction}>
+                  <button className="sidebar-logout" type="submit">
+                    Sair
+                  </button>
+                </form>
+              </div>
             </div>
           </aside>
           <main className="main">{children}</main>

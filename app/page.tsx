@@ -26,12 +26,34 @@ export default async function Dashboard() {
     }),
   ]);
 
+  const today = new Date().toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+  const icon = (d: string) => (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d={d} />
+    </svg>
+  );
+
   return (
     <>
       <div className="page-header">
         <div>
           <h1>Olá, {nutritionist.name.split(" ")[0]} 👋</h1>
-          <p>Visão geral do seu consultório</p>
+          <p style={{ textTransform: "capitalize" }}>{today}</p>
         </div>
         <Link className="btn" href="/pacientes/novo">
           + Novo paciente
@@ -40,14 +62,27 @@ export default async function Dashboard() {
 
       <div className="cards">
         <div className="card">
+          <div className="card-icon">
+            {icon(
+              "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+            )}
+          </div>
           <div className="stat">{patientCount}</div>
-          <div className="label">Pacientes</div>
+          <div className="label">Pacientes ativos</div>
         </div>
         <div className="card">
+          <div className="card-icon">
+            {icon(
+              "M8 2v4M16 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM9 15l2 2 4-4"
+            )}
+          </div>
           <div className="stat">{upcoming}</div>
           <div className="label">Consultas agendadas</div>
         </div>
         <div className="card">
+          <div className="card-icon">
+            {icon("M3 3v18h18M7 14l4-4 3 3 5-6")}
+          </div>
           <div className="stat">{measurementCount}</div>
           <div className="label">Avaliações registradas</div>
         </div>

@@ -66,7 +66,15 @@ export default async function PatientsPage({
                 return (
                   <tr key={p.id}>
                     <td>
-                      <Link href={`/pacientes/${p.id}`}>
+                      <Link href={`/pacientes/${p.id}`} className="row-name">
+                        <span className="avatar">
+                          {p.name
+                            .split(" ")
+                            .map((part) => part[0])
+                            .slice(0, 2)
+                            .join("")
+                            .toUpperCase()}
+                        </span>
                         <strong>{p.name}</strong>
                       </Link>
                     </td>

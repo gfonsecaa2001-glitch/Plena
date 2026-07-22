@@ -9,33 +9,51 @@ export default async function LoginPage({
   const { erro } = await searchParams;
 
   return (
-    <div className="auth-wrap">
-      <div className="auth-card">
-        <div className="auth-logo">
+    <div className="auth-split">
+      <aside className="auth-brand">
+        <div className="auth-brand-logo">
           Plena<span>.</span>
         </div>
-        <h1>Entrar</h1>
-
-        {erro && <p className="auth-error">E-mail ou senha incorretos.</p>}
-
-        <form className="stack" action={loginAction}>
-          <div className="field">
-            <label htmlFor="email">E-mail</label>
-            <input id="email" name="email" type="email" required autoFocus />
-          </div>
-          <div className="field">
-            <label htmlFor="password">Senha</label>
-            <input id="password" name="password" type="password" required />
-          </div>
-          <button className="btn" type="submit">
-            Entrar
-          </button>
-        </form>
-
-        <p className="auth-alt">
-          Ainda não tem conta? <Link href="/cadastro">Cadastre-se grátis</Link>
+        <h2>Seu consultório de nutrição, pleno.</h2>
+        <p>
+          Pacientes, avaliações, agenda e planos alimentares — tudo organizado num só
+          lugar, pra você cuidar do que importa: as pessoas.
         </p>
-      </div>
+        <ul>
+          <li>Prontuário e evolução com gráficos</li>
+          <li>Planos alimentares prontos pra imprimir</li>
+          <li>Agenda com status de cada consulta</li>
+        </ul>
+      </aside>
+
+      <main className="auth-form-side">
+        <div className="auth-card">
+          <div className="auth-logo">
+            Plena<span>.</span>
+          </div>
+          <h1>Bem-vindo de volta</h1>
+
+          {erro && <p className="auth-error">E-mail ou senha incorretos.</p>}
+
+          <form className="stack" action={loginAction}>
+            <div className="field">
+              <label htmlFor="email">E-mail</label>
+              <input id="email" name="email" type="email" required autoFocus />
+            </div>
+            <div className="field">
+              <label htmlFor="password">Senha</label>
+              <input id="password" name="password" type="password" required />
+            </div>
+            <button className="btn" type="submit">
+              Entrar
+            </button>
+          </form>
+
+          <p className="auth-alt">
+            Ainda não tem conta? <Link href="/cadastro">Cadastre-se grátis</Link>
+          </p>
+        </div>
+      </main>
     </div>
   );
 }
