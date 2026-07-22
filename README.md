@@ -39,6 +39,8 @@ npm run dev          # abre em http://localhost:3001
 - ✅ **Gráficos de evolução** — peso, % gordura e medidas na página do paciente; SVG próprio, sem lib externa (`app/pacientes/[id]/line-chart.tsx`), paleta validada p/ daltonismo
 - ✅ **Autenticação** — Auth.js v5 com e-mail/senha (bcrypt); cadastro em `/cadastro`, login em `/login`; isolamento por conta em todas as consultas e ações (conta demo: `demo@nutricrm.app` / `demo1234`)
 - ✅ **Painel administrativo** — `/admin`, só para contas com `role = "admin"`; métricas de negócio (contas, cadastros, último acesso, uso agregado). Por design **não** expõe dados clínicos de pacientes. Promover alguém: `UPDATE "Nutritionist" SET role='admin' WHERE email='...'`
+- ✅ **Google Agenda** — cada nutricionista conecta a própria conta em `/integracoes`; consultas viram eventos com lembrete, e mudanças de status atualizam o evento. Config: `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` (projeto `plena-crm` no Google Cloud). O app está em modo "Testando": novos nutricionistas precisam ser adicionados como usuários de teste até passar pela verificação do Google.
+- ⬜ **Link público de agendamento** — paciente escolhe o horário sozinho
 - ⬜ **Lembretes de consulta** (WhatsApp/e-mail)
 - ⬜ **Billing** — Stripe, planos de assinatura
 - ⬜ **Postgres em produção** + deploy (Vercel + Neon/Supabase)
