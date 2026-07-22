@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { loginAction } from "@/app/auth-actions";
 
 export default async function LoginPage({
@@ -6,6 +8,9 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ erro?: string }>;
 }) {
+  // Quem já está logado não precisa ver o login — vai direto pro início.
+  if (await auth()) redirect("/");
+
   const { erro } = await searchParams;
 
   return (
