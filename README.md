@@ -38,6 +38,7 @@ npm run dev          # abre em http://localhost:3001
 - ✅ **Planos alimentares** — refeições com horários e alimentos; listagem geral em `/planos`; impressão/PDF via navegador (`@media print`)
 - ✅ **Gráficos de evolução** — peso, % gordura e medidas na página do paciente; SVG próprio, sem lib externa (`app/pacientes/[id]/line-chart.tsx`), paleta validada p/ daltonismo
 - ✅ **Autenticação** — Auth.js v5 com e-mail/senha (bcrypt); cadastro em `/cadastro`, login em `/login`; isolamento por conta em todas as consultas e ações (conta demo: `demo@nutricrm.app` / `demo1234`)
+- ✅ **Painel administrativo** — `/admin`, só para contas com `role = "admin"`; métricas de negócio (contas, cadastros, último acesso, uso agregado). Por design **não** expõe dados clínicos de pacientes. Promover alguém: `UPDATE "Nutritionist" SET role='admin' WHERE email='...'`
 - ⬜ **Lembretes de consulta** (WhatsApp/e-mail)
 - ⬜ **Billing** — Stripe, planos de assinatura
 - ⬜ **Postgres em produção** + deploy (Vercel + Neon/Supabase)
