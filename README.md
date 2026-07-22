@@ -1,5 +1,8 @@
 # Plena — CRM para nutricionistas
 
+🌐 **Em produção:** <https://plenacrm.vercel.app> (Vercel + Neon Postgres;
+deploy automático a cada push na `main`)
+
 SaaS de gestão de consultório para nutricionistas (nome de produto: **Plena**;
 a pasta e o repositório mantêm o nome técnico `nutricrm`). Multi-tenant: todo
 dado é filtrado por `nutritionistId`.
