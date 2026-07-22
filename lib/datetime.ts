@@ -65,6 +65,14 @@ export function daysSince(date: Date): number {
 
 export function relativeDays(date: Date): string {
   const d = daysSince(date);
+  // Datas futuras existem de verdade (uma avaliação agendada, um erro de
+  // digitação) — sem este caso, apareceria "há -6 dias".
+  if (d < 0) {
+    const f = Math.abs(d);
+    if (f === 1) return "amanhã";
+    if (f < 30) return `em ${f} dias`;
+    return `em ${Math.floor(f / 30)} ${Math.floor(f / 30) === 1 ? "mês" : "meses"}`;
+  }
   if (d === 0) return "hoje";
   if (d === 1) return "ontem";
   if (d < 30) return `há ${d} dias`;
