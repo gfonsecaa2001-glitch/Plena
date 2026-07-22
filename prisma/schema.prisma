@@ -1,12 +1,7 @@
-// Banco de dados do NutriCRM.
-// Em desenvolvimento usamos SQLite (um arquivo local, zero configuração).
-// Quando for pra produção, trocamos o provider por "postgresql" sem mudar os modelos.
-
-// A URL do banco agora vem do .env (variável de ambiente): no seu Mac ela
-// aponta pro arquivo SQLite; em produção, apontará pro Postgres na nuvem
-// (aí também trocamos o provider para "postgresql").
+// Banco de dados do Plena.
+// Postgres (Neon) — a URL vem do .env local ou das variáveis de ambiente da Vercel.
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
