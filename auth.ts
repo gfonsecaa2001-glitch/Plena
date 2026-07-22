@@ -12,6 +12,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
+  events: {
+    // Registra o último acesso — é o que permite ver no painel admin
+    // quem realmente está usando o sistema (e quem sumiu).
+    async signIn({ user }) {
+      if (!user?.email) return;
+      await prisma.nutritionist
+        .update({ where: { email: user.email }, data: { lastLoginAt: new Date() } })
+        .catch(() => {}); // nunca deixar o login falhar por causa disso
+    },
+  },
   providers: [
     Credentials({
       credentials: { email: {}, password: {} },

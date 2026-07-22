@@ -108,6 +108,33 @@ h1, h2, h3, .stat, .logo, .auth-logo, .auth-brand h2 {
   text-transform: uppercase;
 }
 
+.nav-admin { margin-top: 10px; padding-top: 13px; border-top: 1px solid rgba(255, 255, 255, 0.09); border-radius: 0 0 10px 10px; }
+
+.tag-admin {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+}
+
+.privacy-note {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  background: var(--accent-soft);
+  border: 1px solid #dfe4d0;
+  border-radius: 12px;
+  padding: 13px 16px;
+  margin: 0 0 22px;
+}
+
 .sidebar-user {
   margin-top: auto;
   padding: 14px 10px 2px;

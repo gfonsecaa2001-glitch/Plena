@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { logoutAction } from "@/app/auth-actions";
 import { SidebarNav } from "./nav";
 import "./globals.css";
@@ -34,6 +35,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     .join("")
     .toUpperCase();
 
+  // O link "Administração" só aparece para contas admin. (A proteção de verdade
+  // está no servidor, em lib/admin.ts — esconder o link é só conveniência.)
+  const me = session.user.email
+    ? await prisma.nutritionist.findUnique({
+        where: { email: session.user.email },
+        select: { role: true },
+      })
+    : null;
+
   return (
     <html lang="pt-BR">
       <body className={`${inter.variable} ${fraunces.variable}`}>
@@ -42,7 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <div className="logo">
               Plena<span>.</span>
             </div>
-            <SidebarNav />
+            <SidebarNav isAdmin={me?.role === "admin"} />
 
             <div className="sidebar-user">
               <div className="sidebar-avatar">{initials}</div>

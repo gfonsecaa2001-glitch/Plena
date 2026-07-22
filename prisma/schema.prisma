@@ -17,6 +17,8 @@ model Nutritionist {
   name         String
   email        String        @unique
   passwordHash String? // hash bcrypt da senha — nunca guardamos a senha em si
+  role         String        @default("user") // "user" | "admin" (admin vê o painel do negócio)
+  lastLoginAt  DateTime? // atualizado a cada login, pra medir uso real
   createdAt    DateTime      @default(now())
   patients     Patient[]
   appointments Appointment[]
