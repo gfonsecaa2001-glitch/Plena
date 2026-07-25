@@ -50,6 +50,15 @@ model Patient {
   sex            String? // "F" | "M" | "Outro"
   goal           String? // objetivo: emagrecimento, hipertrofia, saúde...
   anamnesis      String? // histórico clínico / anamnese em texto livre
+
+  // Prescrição energética. O gasto (GET) é calculado a partir de peso, altura,
+  // idade, sexo e nível de atividade; a META é decisão clínica do
+  // nutricionista (déficit para emagrecer, superávit para ganhar massa).
+  activityLevel Float? // 1.2 sedentário … 1.9 muito intenso
+  kcalTarget    Int? // meta calórica diária
+  proteinTarget Float? // metas de macros em gramas
+  carbTarget    Float?
+  fatTarget     Float?
   createdAt      DateTime      @default(now())
   measurements   Measurement[]
   appointments   Appointment[]
@@ -82,6 +91,33 @@ model Appointment {
   googleEventId  String? // id do evento espelhado no Google Agenda (se conectado)
   source         String       @default("interno") // "interno" | "publico" (link de agendamento)
   createdAt      DateTime     @default(now())
+}
+
+// Tabela de composição de alimentos.
+//
+// Base: TACO (Tabela Brasileira de Composição de Alimentos, UNICAMP/NEPA) —
+// a referência usada por nutricionistas no Brasil. Todos os valores são
+// POR 100 GRAMAS do alimento.
+//
+// Alimentos com nutritionistId são criações do próprio nutricionista
+// (receitas, produtos de marca); os da TACO têm nutritionistId nulo e são
+// compartilhados por todos.
+model Food {
+  id             String   @id @default(cuid())
+  tacoId         Int? // id original na TACO, quando veio de lá
+  name           String
+  category       String
+  kcal           Float
+  proteinG       Float
+  carbG          Float
+  fatG           Float
+  fiberG         Float?
+  sodiumMg       Float?
+  nutritionistId String? // nulo = alimento público da TACO
+  createdAt      DateTime @default(now())
+
+  @@index([name])
+  @@index([nutritionistId])
 }
 
 // Plano alimentar. O conteúdo (refeições e alimentos) fica em JSON por enquanto;

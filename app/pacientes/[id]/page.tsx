@@ -8,6 +8,7 @@ import { formatDate, formatDateTime } from "@/lib/datetime";
 import { mealIcon } from "@/lib/food-icons";
 import { Icon } from "@/lib/icons";
 import { LineChart, type ChartSeries } from "./line-chart";
+import { EnergyPanel } from "./energy-panel";
 
 // Cores da paleta validada (script do guia de dataviz — CVD e contraste ok
 // sobre o card #fdfdfa): série 1 verde-oliva, série 2 caramelo.
@@ -117,6 +118,12 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
           <div className="label">Avaliações</div>
         </div>
       </div>
+
+      <EnergyPanel
+        patient={patient}
+        weightKg={latest?.weightKg ?? null}
+        heightCm={latest?.heightCm ?? null}
+      />
 
       {patient.anamnesis && (
         <div className="panel">

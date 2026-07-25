@@ -231,13 +231,61 @@ export async function addMeal(formData: FormData) {
 export async function addMealItem(formData: FormData) {
   const planId = formData.get("planId")!.toString();
   const mealIndex = Number(formData.get("mealIndex"));
-  const item = optional(formData.get("item"));
-  if (!item) return;
+  const foodId = optional(formData.get("foodId"));
+  const gramsRaw = optionalNumber(formData.get("grams"));
+  let text = optional(formData.get("item"));
 
+  // Caminho 1: escolheu um alimento da tabela → o texto é montado a partir
+  // dele, e guardamos o vínculo para poder recalcular os macros depois.
+  if (foodId) {
+    const food = await prisma.food.findUnique({ where: { id: foodId } });
+    if (!food) return;
+    const grams = gramsRaw && gramsRaw > 0 ? Math.min(gramsRaw, 5000) : 100;
+    await updateMeals(planId, (meals) => {
+      meals[mealIndex]?.items.push({
+        text: `${grams} g de ${food.name}`,
+        foodId: food.id,
+        grams,
+      });
+      return meals;
+    });
+    return;
+  }
+
+  // Caminho 2: texto livre (o nutricionista pode sempre escrever à mão).
+  if (!text) return;
   await updateMeals(planId, (meals) => {
-    meals[mealIndex]?.items.push(item);
+    meals[mealIndex]?.items.push({ text });
     return meals;
   });
+}
+
+// Metas energéticas do paciente — decisão clínica, então tudo é editável.
+export async function saveEnergyTargets(formData: FormData) {
+  const patientId = formData.get("patientId")!.toString();
+  if (!(await requireOwnPatient(patientId))) return;
+
+  const activity = optionalNumber(formData.get("activityLevel"));
+
+  await prisma.patient.update({
+    where: { id: patientId },
+    data: {
+      activityLevel: activity && activity >= 1 && activity <= 2.5 ? activity : null,
+      kcalTarget: (() => {
+        const v = optionalNumber(formData.get("kcalTarget"));
+        return v && v > 0 ? Math.round(Math.min(v, 10000)) : null;
+      })(),
+      proteinTarget: clampMacro(optionalNumber(formData.get("proteinTarget"))),
+      carbTarget: clampMacro(optionalNumber(formData.get("carbTarget"))),
+      fatTarget: clampMacro(optionalNumber(formData.get("fatTarget"))),
+    },
+  });
+
+  revalidatePath(`/pacientes/${patientId}`);
+}
+
+function clampMacro(v: number | null): number | null {
+  return v && v > 0 ? Math.round(Math.min(v, 2000) * 10) / 10 : null;
 }
 
 export async function removeMeal(formData: FormData) {

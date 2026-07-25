@@ -6,10 +6,35 @@ import { parseMeals } from "@/lib/mealplan";
 import { formatDate } from "@/lib/datetime";
 import { foodIcon, mealIcon } from "@/lib/food-icons";
 import { Icon } from "@/lib/icons";
-import { addMeal, addMealItem, removeMeal, removeMealItem, deleteMealPlan } from "@/app/actions";
+import { ZERO, addMacros, macrosFor, roundMacros, macroSplit, type Macros } from "@/lib/nutrition";
+import { addMeal, removeMeal, removeMealItem, deleteMealPlan, addMealItem } from "@/app/actions";
 import { PrintButton } from "./print-button";
+import { FoodPicker } from "./food-picker";
 
 export const dynamic = "force-dynamic";
+
+function Bar({ done, target, label }: { done: number; target: number | null; label: string }) {
+  if (!target) return null;
+  const pct = Math.min(Math.round((done / target) * 100), 150);
+  // Verde entre 90% e 110% da meta; fora disso, âmbar.
+  const onTarget = pct >= 90 && pct <= 110;
+  return (
+    <div className="target-bar">
+      <div className="target-bar-head">
+        <span>{label}</span>
+        <span>
+          <strong>{Math.round(done)}</strong> / {Math.round(target)} · {pct}%
+        </span>
+      </div>
+      <div className="target-track">
+        <div
+          className={`target-fill${onTarget ? " on" : ""}`}
+          style={{ width: `${Math.min(pct, 100)}%` }}
+        />
+      </div>
+    </div>
+  );
+}
 
 export default async function MealPlanPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -24,7 +49,34 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
   if (!plan) notFound();
 
   const meals = parseMeals(plan.content);
+
+  // Carrega de uma vez só os alimentos citados no plano, para calcular macros.
+  const foodIds = [...new Set(meals.flatMap((m) => m.items.map((i) => i.foodId).filter(Boolean)))] as string[];
+  const foods = foodIds.length
+    ? await prisma.food.findMany({ where: { id: { in: foodIds } } })
+    : [];
+  const foodById = new Map(foods.map((f) => [f.id, f]));
+
+  const macrosOf = (item: { foodId?: string; grams?: number }): Macros | null => {
+    if (!item.foodId || !item.grams) return null;
+    const food = foodById.get(item.foodId);
+    return food ? macrosFor(food, item.grams) : null;
+  };
+
+  const mealTotals = meals.map((m) =>
+    m.items.reduce((acc, item) => addMacros(acc, macrosOf(item) ?? ZERO), ZERO)
+  );
+  const dayTotal = mealTotals.reduce(addMacros, ZERO);
+  const dayRounded = roundMacros(dayTotal);
+  const split = macroSplit(dayTotal);
+
   const totalItems = meals.reduce((sum, m) => sum + m.items.length, 0);
+  const semCalculo = meals
+    .flatMap((m) => m.items)
+    .filter((i) => !i.foodId || !i.grams).length;
+
+  const p = plan.patient;
+  const temMeta = Boolean(p.kcalTarget || p.proteinTarget || p.carbTarget || p.fatTarget);
 
   return (
     <>
@@ -35,7 +87,7 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
             <h1>{plan.title}</h1>
             <p>
               <Link href={`/pacientes/${plan.patientId}`}>
-                <strong>{plan.patient.name}</strong>
+                <strong>{p.name}</strong>
               </Link>{" "}
               · {meals.length} refeições · {totalItems} alimentos · criado em{" "}
               {formatDate(plan.createdAt)}
@@ -50,6 +102,59 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
+      {/* Resumo nutricional do dia */}
+      {dayTotal.kcal > 0 && (
+        <div className="panel nutri-summary">
+          <h2 className="section-title">
+            <Icon name="activity" size={17} /> Total do dia
+          </h2>
+
+          <div className="nutri-totals">
+            <div className="nutri-big">
+              <strong>{dayRounded.kcal}</strong>
+              <span>kcal</span>
+            </div>
+            <div className="nutri-macros">
+              <div>
+                <b>{dayRounded.protein} g</b>
+                <span>Proteína · {split.protein}%</span>
+              </div>
+              <div>
+                <b>{dayRounded.carb} g</b>
+                <span>Carboidrato · {split.carb}%</span>
+              </div>
+              <div>
+                <b>{dayRounded.fat} g</b>
+                <span>Gordura · {split.fat}%</span>
+              </div>
+            </div>
+          </div>
+
+          {temMeta ? (
+            <div className="targets">
+              <Bar done={dayTotal.kcal} target={p.kcalTarget} label="Calorias (kcal)" />
+              <Bar done={dayTotal.protein} target={p.proteinTarget} label="Proteína (g)" />
+              <Bar done={dayTotal.carb} target={p.carbTarget} label="Carboidrato (g)" />
+              <Bar done={dayTotal.fat} target={p.fatTarget} label="Gordura (g)" />
+            </div>
+          ) : (
+            <p className="muted no-print" style={{ fontSize: 13.5, margin: "14px 0 0" }}>
+              Defina as metas na{" "}
+              <Link href={`/pacientes/${plan.patientId}`}>página do paciente</Link> para
+              acompanhar o progresso em relação ao alvo.
+            </p>
+          )}
+
+          {semCalculo > 0 && (
+            <p className="calc-warning no-print">
+              <Icon name="alert" size={14} /> {semCalculo}{" "}
+              {semCalculo === 1 ? "item escrito à mão não entra" : "itens escritos à mão não entram"}{" "}
+              no cálculo. Escolha o alimento na tabela para incluir.
+            </p>
+          )}
+        </div>
+      )}
+
       {meals.length === 0 && (
         <div className="panel empty-state no-print">
           <span className="empty-emoji">🥣</span>
@@ -60,62 +165,77 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
         </div>
       )}
 
-      {meals.map((meal, mealIndex) => (
-        <div className="panel meal" key={mealIndex}>
-          <div className="meal-header">
-            <div className="meal-title">
-              <span className="meal-emoji">{mealIcon(meal.name)}</span>
-              <div>
-                <h2>{meal.name}</h2>
-                {meal.time && (
-                  <span className="meal-time">
-                    <Icon name="clock" size={13} /> {meal.time}
-                  </span>
-                )}
+      {meals.map((meal, mealIndex) => {
+        const total = roundMacros(mealTotals[mealIndex]);
+        return (
+          <div className="panel meal" key={mealIndex}>
+            <div className="meal-header">
+              <div className="meal-title">
+                <span className="meal-emoji">{mealIcon(meal.name)}</span>
+                <div>
+                  <h2>{meal.name}</h2>
+                  <div className="meal-sub">
+                    {meal.time && (
+                      <span className="meal-time">
+                        <Icon name="clock" size={13} /> {meal.time}
+                      </span>
+                    )}
+                    {total.kcal > 0 && (
+                      <span className="meal-kcal">
+                        {total.kcal} kcal · P {total.protein} · C {total.carb} · G {total.fat}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
+              <form action={removeMeal} className="no-print">
+                <input type="hidden" name="planId" value={plan.id} />
+                <input type="hidden" name="mealIndex" value={mealIndex} />
+                <button className="btn small secondary danger" type="submit">
+                  <Icon name="trash" size={14} /> Remover
+                </button>
+              </form>
             </div>
-            <form action={removeMeal} className="no-print">
-              <input type="hidden" name="planId" value={plan.id} />
-              <input type="hidden" name="mealIndex" value={mealIndex} />
-              <button className="btn small secondary danger" type="submit">
-                <Icon name="trash" size={14} /> Remover
-              </button>
-            </form>
+
+            {meal.items.length === 0 ? (
+              <p className="empty">Nenhum alimento ainda.</p>
+            ) : (
+              <ul className="meal-items">
+                {meal.items.map((item, itemIndex) => {
+                  const m = macrosOf(item);
+                  const r = m ? roundMacros(m) : null;
+                  return (
+                    <li key={itemIndex}>
+                      <span className="food-emoji">{foodIcon(item.text)}</span>
+                      <span className="food-text">{item.text}</span>
+                      {r ? (
+                        <span className="food-macros">
+                          <b>{r.kcal} kcal</b>
+                          <span>
+                            P {r.protein} · C {r.carb} · G {r.fat}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="food-macros muted no-print">sem cálculo</span>
+                      )}
+                      <form action={removeMealItem} className="no-print">
+                        <input type="hidden" name="planId" value={plan.id} />
+                        <input type="hidden" name="mealIndex" value={mealIndex} />
+                        <input type="hidden" name="itemIndex" value={itemIndex} />
+                        <button className="link-remove" type="submit" aria-label="Remover item">
+                          ×
+                        </button>
+                      </form>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <FoodPicker planId={plan.id} mealIndex={mealIndex} action={addMealItem} />
           </div>
-
-          {meal.items.length === 0 ? (
-            <p className="empty">Nenhum alimento ainda.</p>
-          ) : (
-            <ul className="meal-items">
-              {meal.items.map((item, itemIndex) => (
-                <li key={itemIndex}>
-                  <span className="food-emoji">{foodIcon(item)}</span>
-                  <span className="food-text">{item}</span>
-                  <form action={removeMealItem} className="no-print">
-                    <input type="hidden" name="planId" value={plan.id} />
-                    <input type="hidden" name="mealIndex" value={mealIndex} />
-                    <input type="hidden" name="itemIndex" value={itemIndex} />
-                    <button className="link-remove" type="submit" aria-label="Remover item">
-                      ×
-                    </button>
-                  </form>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <form action={addMealItem} className="inline-form no-print" style={{ marginTop: 12 }}>
-            <input type="hidden" name="planId" value={plan.id} />
-            <input type="hidden" name="mealIndex" value={mealIndex} />
-            <div className="field" style={{ flex: 1 }}>
-              <input name="item" placeholder="Ex.: 2 ovos mexidos · 100g de arroz integral…" />
-            </div>
-            <button className="btn small" type="submit">
-              <Icon name="plus" size={14} /> Alimento
-            </button>
-          </form>
-        </div>
-      ))}
+        );
+      })}
 
       <div className="panel no-print">
         <h2 className="section-title">

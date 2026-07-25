@@ -54,7 +54,7 @@ export default async function MealPlansPage() {
         <div className="plan-grid">
           {plans.map((plan) => {
             const meals = parseMeals(plan.content);
-            const preview = meals.flatMap((m) => m.items).slice(0, 6);
+            const preview = meals.flatMap((m) => m.items.map((i) => i.text)).slice(0, 6);
             return (
               <Link className="plan-card" key={plan.id} href={`/planos/${plan.id}`}>
                 <div className="plan-card-head">
