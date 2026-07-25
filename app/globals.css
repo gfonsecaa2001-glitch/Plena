@@ -429,7 +429,9 @@ tbody tr:hover td { background: rgba(238, 241, 228, 0.55); }
 .row-name { display: flex; align-items: center; }
 
 .badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 3px 11px;
   border-radius: 999px;
   font-size: 12px;
@@ -483,6 +485,132 @@ form.stack { display: flex; flex-direction: column; gap: 13px; max-width: 520px;
 }
 .muted { color: var(--muted); }
 
+/* ===== Ícones e títulos ===== */
+.title-with-icon { display: flex; align-items: center; gap: 14px; }
+.page-emoji {
+  font-size: 26px;
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  background: linear-gradient(160deg, #fff, var(--accent-soft));
+  border: 1px solid #e2e6d6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(38, 43, 32, 0.05);
+}
+.icon-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.section-title { display: flex; align-items: center; gap: 9px; }
+.section-title svg { color: var(--accent); flex-shrink: 0; }
+.section-emoji { font-size: 18px; line-height: 1; }
+
+/* Ícones dentro de cabeçalhos de tabela e botões */
+th { white-space: nowrap; }
+th svg { vertical-align: -2px; margin-right: 5px; opacity: 0.7; }
+.btn svg { flex-shrink: 0; }
+
+.avatar.big { width: 52px; height: 52px; font-size: 17px; border-radius: 15px; margin-right: 0; }
+
+/* ===== Estados vazios ilustrados ===== */
+.empty-state { text-align: center; padding: 40px 24px; }
+.empty-state h2 { margin: 0 0 6px; font-size: 19px; }
+.empty-state p { margin: 0; font-size: 14px; }
+.empty-emoji {
+  font-size: 40px;
+  display: block;
+  margin-bottom: 14px;
+  filter: saturate(0.85);
+}
+.empty-emoji.small { font-size: 26px; margin-bottom: 8px; }
+.empty-inline { text-align: center; padding: 18px 0; }
+.empty-inline p { margin: 0; }
+
+/* ===== Etiquetas ===== */
+.tag-warn,
+.tag-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.tag-warn { background: #f9ece6; color: #a03d22; border: 1px solid #eed6ca; }
+.tag-source { background: var(--accent-soft); color: var(--accent-strong); margin-left: 6px; }
+
+/* ===== Busca com ícone ===== */
+.searchbar { position: relative; display: inline-block; }
+.searchbar-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  display: flex;
+  pointer-events: none;
+}
+.searchbar input { padding-left: 36px; }
+
+/* ===== Cartões de plano alimentar ===== */
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.plan-card {
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+.plan-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-pop); border-color: #d3d8c4; }
+.plan-card-head { display: flex; align-items: center; gap: 11px; margin-bottom: 13px; }
+.plan-card-head strong { font-size: 15px; display: block; }
+
+.plan-meals { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.plan-meals.inline { margin: 4px 0 0; font-size: 15px; gap: 3px; }
+.meal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.plan-foods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-size: 19px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.plan-card-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 11px;
+}
+.plan-card-foot span { display: inline-flex; align-items: center; gap: 5px; }
+
 /* ===== Tela inicial ===== */
 .dash-grid { display: grid; grid-template-columns: 1.65fr 1fr; gap: 22px; align-items: start; }
 .dash-col { display: flex; flex-direction: column; }
@@ -520,7 +648,14 @@ form.stack { display: flex; flex-direction: column; gap: 13px; max-width: 520px;
 .list-main { flex: 1; min-width: 0; font-size: 14px; }
 .list-main .muted { font-size: 12.5px; margin-top: 1px; }
 .list-main a:hover strong { color: var(--accent-strong); }
-.list-meta { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.list-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
 .list-time {
   font-size: 13px;
   font-weight: 700;
@@ -606,18 +741,52 @@ form.stack { display: flex; flex-direction: column; gap: 13px; max-width: 520px;
 .chart-tooltip-date { font-weight: 700; margin-bottom: 3px; }
 
 /* ===== Planos alimentares ===== */
-.meal-header { display: flex; align-items: center; justify-content: space-between; }
+.meal-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .meal-header h2 { margin: 0; }
-.meal-items { list-style: none; margin: 10px 0 0; padding: 0; }
+.meal-title { display: flex; align-items: center; gap: 12px; }
+.meal-emoji {
+  font-size: 23px;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, #fff, var(--accent-soft));
+  border: 1px solid #e2e6d6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.meal-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.meal-items { list-style: none; margin: 12px 0 0; padding: 0; }
 .meal-items li {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 2px;
+  gap: 11px;
+  padding: 9px 2px;
   border-bottom: 1px solid var(--line);
   font-size: 14px;
 }
 .meal-items li:last-child { border-bottom: none; }
+.food-emoji {
+  font-size: 19px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.food-text { flex: 1; }
 .link-remove {
   border: none;
   background: none;
@@ -699,6 +868,9 @@ form.stack { display: flex; flex-direction: column; gap: 13px; max-width: 520px;
   .page-header { flex-wrap: wrap; gap: 10px; }
   .grid-2 { grid-template-columns: 1fr; }
   .dash-grid { grid-template-columns: 1fr; }
+  .plan-grid { grid-template-columns: 1fr; }
+  .page-emoji, .avatar.big { width: 42px; height: 42px; font-size: 21px; border-radius: 12px; }
+  .searchbar, .searchbar input { width: 100%; }
   .panel { overflow-x: auto; }
   .auth-brand { display: none; }
   .auth-logo { display: block; }
@@ -710,4 +882,14 @@ form.stack { display: flex; flex-direction: column; gap: 13px; max-width: 520px;
   .main { padding: 0; max-width: 100%; }
   body { background: #fff; }
   .panel { border: none; border-bottom: 1px solid #ddd; border-radius: 0; page-break-inside: avoid; box-shadow: none; }
+  /* Os ícones de comida são parte do conteúdo: garantimos que saiam na
+     impressão (navegadores omitem fundos por padrão para poupar tinta). */
+  .meal-emoji, .food-emoji, .page-emoji {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    border: none;
+    background: none;
+  }
+  .food-emoji { width: 26px; height: 26px; }
+  .meal-emoji { width: 34px; height: 34px; }
 }

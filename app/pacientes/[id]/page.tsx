@@ -5,6 +5,8 @@ import { getCurrentNutritionist } from "@/lib/tenant";
 import { addMeasurement, addAppointment, createMealPlan } from "@/app/actions";
 import { parseMeals } from "@/lib/mealplan";
 import { formatDate, formatDateTime } from "@/lib/datetime";
+import { mealIcon } from "@/lib/food-icons";
+import { Icon } from "@/lib/icons";
 import { LineChart, type ChartSeries } from "./line-chart";
 
 // Cores da paleta validada (script do guia de dataviz — CVD e contraste ok
@@ -63,32 +65,54 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
   return (
     <>
       <div className="page-header">
-        <div>
-          <h1>{patient.name}</h1>
-          <p>
-            {age(patient.birthDate)} · {patient.goal ?? "sem objetivo definido"} ·{" "}
-            {patient.phone ?? patient.email ?? "sem contato"}
-          </p>
+        <div className="title-with-icon">
+          <span className="avatar big">
+            {patient.name
+              .split(" ")
+              .map((p) => p[0])
+              .slice(0, 2)
+              .join("")
+              .toUpperCase()}
+          </span>
+          <div>
+            <h1>{patient.name}</h1>
+            <p>
+              {age(patient.birthDate)} · {patient.goal ?? "sem objetivo definido"} ·{" "}
+              {patient.phone ?? patient.email ?? "sem contato"}
+            </p>
+          </div>
         </div>
         <Link className="btn secondary" href="/pacientes">
-          ← Voltar
+          <Icon name="back" size={15} /> Voltar
         </Link>
       </div>
 
       <div className="cards">
         <div className="card">
+          <div className="card-icon">
+            <Icon name="scale" size={17} />
+          </div>
           <div className="stat">{latest?.weightKg ? `${latest.weightKg} kg` : "—"}</div>
           <div className="label">Peso atual</div>
         </div>
         <div className="card">
+          <div className="card-icon">
+            <Icon name="target" size={17} />
+          </div>
           <div className="stat">{bmi ?? "—"}</div>
           <div className="label">IMC</div>
         </div>
         <div className="card">
+          <div className="card-icon">
+            <Icon name="activity" size={17} />
+          </div>
           <div className="stat">{latest?.bodyFatPct ? `${latest.bodyFatPct}%` : "—"}</div>
           <div className="label">Gordura corporal</div>
         </div>
         <div className="card">
+          <div className="card-icon">
+            <Icon name="clipboard" size={17} />
+          </div>
           <div className="stat">{patient.measurements.length}</div>
           <div className="label">Avaliações</div>
         </div>
@@ -96,7 +120,9 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
 
       {patient.anamnesis && (
         <div className="panel">
-          <h2>Anamnese</h2>
+          <h2 className="section-title">
+            <Icon name="clipboard" size={17} /> Anamnese
+          </h2>
           <p style={{ whiteSpace: "pre-wrap", margin: 0, fontSize: 14 }}>{patient.anamnesis}</p>
         </div>
       )}
@@ -112,7 +138,9 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
 
         return (
           <div className="panel">
-            <h2>Evolução</h2>
+            <h2 className="section-title">
+              <Icon name="trend" size={17} /> Evolução
+            </h2>
             {!hasCharts ? (
               <p className="empty">
                 Registre pelo menos duas avaliações para ver os gráficos de evolução.
@@ -135,7 +163,9 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
       })()}
 
       <div className="panel">
-        <h2>Avaliações antropométricas</h2>
+        <h2 className="section-title">
+          <Icon name="ruler" size={17} /> Avaliações antropométricas
+        </h2>
         <form className="inline-form" action={addMeasurement} style={{ marginBottom: 14 }}>
           <input type="hidden" name="patientId" value={patient.id} />
           <div className="field">
@@ -198,7 +228,9 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
       </div>
 
       <div className="panel">
-        <h2>Planos alimentares</h2>
+        <h2 className="section-title">
+          <span className="section-emoji">🥗</span> Planos alimentares
+        </h2>
         <form className="inline-form" action={createMealPlan} style={{ marginBottom: 14 }}>
           <input type="hidden" name="patientId" value={patient.id} />
           <div className="field" style={{ flex: 1 }}>
@@ -222,24 +254,36 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
               </tr>
             </thead>
             <tbody>
-              {patient.mealPlans.map((plan) => (
-                <tr key={plan.id}>
-                  <td>
-                    <Link href={`/planos/${plan.id}`}>
-                      <strong>{plan.title}</strong>
-                    </Link>
-                  </td>
-                  <td>{parseMeals(plan.content).length}</td>
-                  <td>{formatDate(plan.createdAt)}</td>
-                </tr>
-              ))}
+              {patient.mealPlans.map((plan) => {
+                const planMeals = parseMeals(plan.content);
+                return (
+                  <tr key={plan.id}>
+                    <td>
+                      <Link href={`/planos/${plan.id}`}>
+                        <strong>{plan.title}</strong>
+                      </Link>
+                      <div className="plan-meals inline">
+                        {planMeals.slice(0, 5).map((m, i) => (
+                          <span key={i} title={m.name}>
+                            {mealIcon(m.name)}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td>{planMeals.length}</td>
+                    <td>{formatDate(plan.createdAt)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
       </div>
 
       <div className="panel">
-        <h2>Consultas</h2>
+        <h2 className="section-title">
+          <Icon name="calendar" size={17} /> Consultas
+        </h2>
         <form className="inline-form" action={addAppointment} style={{ marginBottom: 14 }}>
           <input type="hidden" name="patientId" value={patient.id} />
           <div className="field">

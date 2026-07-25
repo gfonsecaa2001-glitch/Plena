@@ -23,9 +23,12 @@ export default async function BookingSettingsPage() {
   return (
     <>
       <div className="page-header">
-        <div>
-          <h1>Link de agendamento</h1>
-          <p>Seus pacientes escolhem o horário sozinhos — sem troca de mensagens</p>
+        <div className="title-with-icon">
+          <span className="page-emoji">🔗</span>
+          <div>
+            <h1>Link de agendamento</h1>
+            <p>Seus pacientes escolhem o horário sozinhos — sem troca de mensagens</p>
+          </div>
         </div>
       </div>
 

@@ -3,8 +3,25 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
 import { setAppointmentStatus } from "@/app/actions";
 import { formatDateTime } from "@/lib/datetime";
+import { Icon } from "@/lib/icons";
 
 export const dynamic = "force-dynamic";
+
+const STATUS_EMOJI: Record<string, string> = {
+  agendada: "🗓️",
+  realizada: "✅",
+  faltou: "⚠️",
+  cancelada: "🚫",
+};
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 export default async function AgendaPage() {
   const nutritionist = await getCurrentNutritionist();
@@ -17,19 +34,29 @@ export default async function AgendaPage() {
 
   const now = new Date();
   const upcoming = appointments.filter((a) => a.scheduledAt >= now || a.status === "agendada");
-  const past = appointments.filter((a) => a.scheduledAt < now && a.status !== "agendada");
+  const past = appointments
+    .filter((a) => a.scheduledAt < now && a.status !== "agendada")
+    .reverse();
 
   const renderRows = (list: typeof appointments, showActions: boolean) =>
     list.map((a) => (
       <tr key={a.id}>
         <td>{formatDateTime(a.scheduledAt)}</td>
         <td>
-          <Link href={`/pacientes/${a.patientId}`}>
+          <Link href={`/pacientes/${a.patientId}`} className="row-name">
+            <span className="avatar">{initials(a.patient.name)}</span>
             <strong>{a.patient.name}</strong>
           </Link>
         </td>
         <td>
-          <span className={`badge ${a.status}`}>{a.status}</span>
+          <span className={`badge ${a.status}`}>
+            {STATUS_EMOJI[a.status]} {a.status}
+          </span>
+          {a.source === "publico" && (
+            <span className="tag-source" title="Agendado pelo link público">
+              <Icon name="link" size={11} /> online
+            </span>
+          )}
         </td>
         <td>{a.notes ?? "—"}</td>
         <td>
@@ -39,7 +66,7 @@ export default async function AgendaPage() {
                 <input type="hidden" name="id" value={a.id} />
                 <input type="hidden" name="status" value="realizada" />
                 <button className="btn small" type="submit">
-                  Realizada
+                  <Icon name="check" size={13} /> Realizada
                 </button>
               </form>
               <form action={setAppointmentStatus}>
@@ -55,50 +82,65 @@ export default async function AgendaPage() {
       </tr>
     ));
 
+  const header = (
+    <tr>
+      <th>
+        <Icon name="clock" size={13} /> Data
+      </th>
+      <th>
+        <Icon name="patient" size={13} /> Paciente
+      </th>
+      <th>Status</th>
+      <th>Observações</th>
+      <th></th>
+    </tr>
+  );
+
   return (
     <>
       <div className="page-header">
-        <div>
-          <h1>Agenda</h1>
-          <p>As consultas são agendadas pela página de cada paciente.</p>
+        <div className="title-with-icon">
+          <span className="page-emoji">📅</span>
+          <div>
+            <h1>Agenda</h1>
+            <p>
+              {upcoming.length} consulta{upcoming.length === 1 ? "" : "s"} pendente
+              {upcoming.length === 1 ? "" : "s"} · agende pela página do paciente ou pelo link
+              público
+            </p>
+          </div>
         </div>
+        <Link className="btn secondary" href="/agendamento">
+          <Icon name="link" size={15} /> Link de agendamento
+        </Link>
       </div>
 
       <div className="panel">
-        <h2>Próximas consultas</h2>
+        <h2 className="section-title">
+          <Icon name="calendarCheck" size={17} /> Próximas consultas
+        </h2>
         {upcoming.length === 0 ? (
-          <p className="empty">Nenhuma consulta pendente.</p>
+          <div className="empty-inline">
+            <span className="empty-emoji small">🌤️</span>
+            <p className="muted">Nenhuma consulta pendente.</p>
+          </div>
         ) : (
           <table>
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Paciente</th>
-                <th>Status</th>
-                <th>Observações</th>
-                <th></th>
-              </tr>
-            </thead>
+            <thead>{header}</thead>
             <tbody>{renderRows(upcoming, true)}</tbody>
           </table>
         )}
       </div>
 
       <div className="panel">
-        <h2>Histórico</h2>
+        <h2 className="section-title">
+          <Icon name="clipboard" size={17} /> Histórico
+        </h2>
         {past.length === 0 ? (
           <p className="empty">Nenhuma consulta no histórico.</p>
         ) : (
           <table>
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Paciente</th>
-                <th>Status</th>
-                <th>Observações</th>
-                <th></th>
-              </tr>
-            </thead>
+            <thead>{header}</thead>
             <tbody>{renderRows(past, false)}</tbody>
           </table>
         )}

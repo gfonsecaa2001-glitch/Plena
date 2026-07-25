@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
 import { setAppointmentStatus } from "@/app/actions";
+import { Icon } from "@/lib/icons";
 import {
   TZ,
   todayISO,
@@ -14,24 +15,6 @@ import {
 } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
-
-function Icon({ d }: { d: string }) {
-  return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d={d} />
-    </svg>
-  );
-}
 
 function initials(name: string) {
   return name
@@ -159,14 +142,12 @@ export default async function Dashboard() {
             })}
           </p>
         </div>
-        <Link className="btn" href="/pacientes/novo">
-          + Novo paciente
-        </Link>
+        <Link className="btn" href="/pacientes/novo"><Icon name="plus" size={15} /> Novo paciente</Link>
       </div>
 
       {isEmpty ? (
         <div className="panel onboarding">
-          <h2>Primeiros passos</h2>
+          <h2 className="section-title"><Icon name="checkCircle" size={17} /> Primeiros passos</h2>
           <p className="muted" style={{ marginTop: -8, fontSize: 14 }}>
             Seu consultório começa aqui. Leva menos de 5 minutos.
           </p>
@@ -196,7 +177,7 @@ export default async function Dashboard() {
         <div className="cards">
           <div className="card">
             <div className="card-icon">
-              <Icon d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+              <Icon name="patient" size={17} />
             </div>
             <div className="stat">{patients.length}</div>
             <div className="label">
@@ -206,21 +187,21 @@ export default async function Dashboard() {
           </div>
           <div className="card">
             <div className="card-icon">
-              <Icon d="M8 2v4M16 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+              <Icon name="calendar" size={17} />
             </div>
             <div className="stat">{todayAppointments.length}</div>
             <div className="label">Consultas hoje</div>
           </div>
           <div className="card">
             <div className="card-icon">
-              <Icon d="M3 3v18h18M7 14l4-4 3 3 5-6" />
+              <Icon name="chart" size={17} />
             </div>
             <div className="stat">{measurementsThisMonth}</div>
             <div className="label">Avaliados este mês</div>
           </div>
           <div className="card">
             <div className="card-icon">
-              <Icon d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+              <Icon name="alert" size={17} />
             </div>
             <div className="stat">{withoutFollowUp.length}</div>
             <div className="label">Sem retorno marcado</div>
@@ -232,7 +213,7 @@ export default async function Dashboard() {
         <div className="dash-grid">
           <div className="dash-col">
             <div className="panel">
-              <h2>Agenda de hoje</h2>
+              <h2 className="section-title"><Icon name="calendarCheck" size={17} /> Agenda de hoje</h2>
               {todayAppointments.length === 0 ? (
                 <>
                   <p className="empty">Nenhuma consulta hoje.</p>
@@ -295,7 +276,7 @@ export default async function Dashboard() {
             </div>
 
             <div className="panel">
-              <h2>Atividade recente</h2>
+              <h2 className="section-title"><Icon name="activity" size={17} /> Atividade recente</h2>
               {activity.length === 0 ? (
                 <p className="empty">Nada registrado ainda.</p>
               ) : (
@@ -319,7 +300,7 @@ export default async function Dashboard() {
 
           <div className="dash-col">
             <div className="panel">
-              <h2>Precisam de atenção</h2>
+              <h2 className="section-title"><Icon name="alert" size={17} /> Precisam de atenção</h2>
               <p className="muted" style={{ marginTop: -10, fontSize: 12.5 }}>
                 Pacientes sem próxima consulta marcada
               </p>
@@ -352,7 +333,7 @@ export default async function Dashboard() {
             </div>
 
             <div className="panel">
-              <h2>Aniversariantes do mês</h2>
+              <h2 className="section-title"><Icon name="cake" size={17} /> Aniversariantes do mês</h2>
               {birthdays.length === 0 ? (
                 <p className="empty">Ninguém faz aniversário este mês.</p>
               ) : (

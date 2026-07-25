@@ -17,9 +17,12 @@ export default async function IntegrationsPage({
   return (
     <>
       <div className="page-header">
-        <div>
-          <h1>Integrações</h1>
-          <p>Conecte o Plena às ferramentas que você já usa</p>
+        <div className="title-with-icon">
+          <span className="page-emoji">⚡</span>
+          <div>
+            <h1>Integrações</h1>
+            <p>Conecte o Plena às ferramentas que você já usa</p>
+          </div>
         </div>
       </div>
 

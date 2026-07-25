@@ -1,13 +1,21 @@
+import Link from "next/link";
 import { createPatient } from "@/app/actions";
+import { Icon } from "@/lib/icons";
 
 export default function NewPatientPage() {
   return (
     <>
       <div className="page-header">
-        <div>
-          <h1>Novo paciente</h1>
-          <p>Só o nome é obrigatório — o resto você completa na primeira consulta.</p>
+        <div className="title-with-icon">
+          <span className="page-emoji">🧑‍⚕️</span>
+          <div>
+            <h1>Novo paciente</h1>
+            <p>Só o nome é obrigatório — o resto você completa na primeira consulta.</p>
+          </div>
         </div>
+        <Link className="btn secondary" href="/pacientes">
+          <Icon name="back" size={15} /> Voltar
+        </Link>
       </div>
 
       <div className="panel">

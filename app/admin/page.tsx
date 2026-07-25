@@ -63,9 +63,12 @@ export default async function AdminPage() {
   return (
     <>
       <div className="page-header">
-        <div>
-          <h1>Administração</h1>
-          <p>Visão do negócio — uso da plataforma pelos nutricionistas</p>
+        <div className="title-with-icon">
+          <span className="page-emoji">🛡️</span>
+          <div>
+            <h1>Administração</h1>
+            <p>Visão do negócio — uso da plataforma pelos nutricionistas</p>
+          </div>
         </div>
       </div>
 
