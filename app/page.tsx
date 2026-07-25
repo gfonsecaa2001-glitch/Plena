@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { getCurrentNutritionist } from "@/lib/tenant";
+import { getCurrentNutritionistOrNull } from "@/lib/tenant";
+import { Landing } from "./landing";
 import { setAppointmentStatus } from "@/app/actions";
 import { Icon } from "@/lib/icons";
 import {
@@ -35,7 +36,10 @@ function greeting() {
 }
 
 export default async function Dashboard() {
-  const nutritionist = await getCurrentNutritionist();
+  // Visitante sem conta vê a página de apresentação; quem está logado, o painel.
+  const nutritionist = await getCurrentNutritionistOrNull();
+  if (!nutritionist) return <Landing />;
+
   const now = new Date();
   const today = todayISO();
   const { start: dayStart, end: dayEnd } = dayRange(today);

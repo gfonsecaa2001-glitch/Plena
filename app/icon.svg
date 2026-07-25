@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Símbolo do Plena: um broto de duas folhas.
+       Simples de propósito — precisa ser legível a 16px na aba do navegador. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a3620" />
+      <stop offset="1" stop-color="#1a2114" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#bg)" />
+  <path d="M32 53 V33" stroke="#a9c284" stroke-width="5" stroke-linecap="round" />
+  <path d="M32 37 C 18 37, 11 27, 13 12 C 28 12, 34 23, 32 37 Z" fill="#6f9a4d" />
+  <path d="M32 37 C 46 37, 53 27, 51 12 C 36 12, 30 23, 32 37 Z" fill="#a9c284" />
+</svg>

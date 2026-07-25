@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { buildSlots } from "@/lib/booking";
@@ -7,6 +8,23 @@ import { SlotPicker } from "./slot-picker";
 
 // Página PÚBLICA — sem login. É o link que o nutricionista manda pro paciente.
 export const dynamic = "force-dynamic";
+
+// Título e descrição personalizados na prévia do link (WhatsApp, Instagram).
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const n = await prisma.nutritionist
+    .findUnique({ where: { bookingSlug: slug }, select: { name: true } })
+    .catch(() => null);
+
+  const title = n ? `Agendar consulta com ${n.name}` : "Agendar consulta";
+  const description = "Escolha o melhor horário — leva menos de um minuto.";
+
+  return { title, description, openGraph: { title, description, type: "website" } };
+}
 
 const ERROS: Record<string, string> = {
   dados: "Preencha seu nome e escolha um horário.",

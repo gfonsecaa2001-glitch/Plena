@@ -12,8 +12,26 @@ const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-serif" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
+  // metadataBase resolve os caminhos relativos das imagens sociais para URLs
+  // absolutas — sem isso, WhatsApp e Instagram não conseguem carregá-las.
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ??
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : "http://localhost:3001")
+  ),
   title: "Plena — CRM para nutricionistas",
-  description: "Seu consultório de nutrição, organizado e pleno.",
+  description:
+    "Pacientes, avaliações com gráficos, agenda e planos alimentares — tudo num só lugar.",
+  openGraph: {
+    title: "Plena — CRM para nutricionistas",
+    description:
+      "Pacientes, avaliações com gráficos, agenda e planos alimentares — tudo num só lugar.",
+    siteName: "Plena",
+    locale: "pt_BR",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
