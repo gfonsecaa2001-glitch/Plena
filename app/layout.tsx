@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Fraunces, Inter } from "next/font/google";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { getCurrentNutritionistOrNull } from "@/lib/tenant";
 import { logoutAction } from "@/app/auth-actions";
 import { SidebarNav } from "./nav";
 import "./globals.css";
@@ -23,10 +22,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const pathname = (await headers()).get("x-pathname") ?? "";
   const isPublicPage = pathname.startsWith("/agendar");
 
-  const session = isPublicPage ? null : await auth();
+  // Uma única chamada por requisição, compartilhada com a página (React cache).
+  const me = isPublicPage ? null : await getCurrentNutritionistOrNull();
 
   // Sem sessão (login/cadastro) ou página pública: sem menu lateral.
-  if (!session?.user) {
+  if (!me) {
     return (
       <html lang="pt-BR">
         <body className={`${inter.variable} ${fraunces.variable}`}>{children}</body>
@@ -34,21 +34,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     );
   }
 
-  const initials = (session.user.name ?? "?")
+  const initials = me.name
     .split(" ")
     .map((p) => p[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
-
-  // O link "Administração" só aparece para contas admin. (A proteção de verdade
-  // está no servidor, em lib/admin.ts — esconder o link é só conveniência.)
-  const me = session.user.email
-    ? await prisma.nutritionist.findUnique({
-        where: { email: session.user.email },
-        select: { role: true },
-      })
-    : null;
 
   return (
     <html lang="pt-BR">
@@ -63,7 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <div className="sidebar-user">
               <div className="sidebar-avatar">{initials}</div>
               <div className="sidebar-user-info">
-                <div className="sidebar-user-name">{session.user.name}</div>
+                <div className="sidebar-user-name">{me.name}</div>
                 <form action={logoutAction}>
                   <button className="sidebar-logout" type="submit">
                     Sair

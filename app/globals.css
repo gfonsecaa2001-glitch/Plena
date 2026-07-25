@@ -485,6 +485,48 @@ form.stack { display: flex; flex-direction: column; gap: 13px; max-width: 520px;
 }
 .muted { color: var(--muted); }
 
+/* ===== Esqueleto de carregamento ===== */
+.skeleton-page { animation: sk-fade 0.25s ease; }
+@keyframes sk-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.sk {
+  background: linear-gradient(90deg, #eceadf 25%, #f4f2e8 50%, #eceadf 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+  border-radius: 7px;
+}
+@keyframes sk-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+/* Quem prefere menos movimento vê um bloco estático em vez do brilho. */
+@media (prefers-reduced-motion: reduce) {
+  .sk { animation: none; }
+  .skeleton-page { animation: none; }
+}
+
+.sk-line { height: 15px; }
+.sk-avatar { width: 52px; height: 52px; border-radius: 15px; flex-shrink: 0; }
+.sk-avatar.small { width: 32px; height: 32px; border-radius: 999px; }
+.sk-chip { width: 34px; height: 34px; border-radius: 10px; }
+
+.sk-header { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+.sk-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 26px; }
+.sk-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.sk-panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+}
+.sk-row { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.sk-row:last-child { border-bottom: none; }
+
 /* ===== Ícones e títulos ===== */
 .title-with-icon { display: flex; align-items: center; gap: 14px; }
 .page-emoji {
