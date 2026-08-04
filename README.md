@@ -45,4 +45,5 @@ npm run dev          # abre em http://localhost:3001
 - ⬜ **Lembretes de consulta** (WhatsApp/e-mail)
 - ⬜ **Billing** — Stripe, planos de assinatura
 - ✅ **Postgres em produção + deploy** — Neon (região São Paulo) + Vercel, deploy automático a cada push na `main`
+- ✅ **Histórico do acompanhamento** — modelo `Note` (evolução vinculada a consulta ou anotação avulsa), `Patient.status` (ativo/inativo/alta) e linha do tempo unificada na ficha do paciente (`app/pacientes/[id]/timeline.tsx`). Lista de pacientes filtra por situação; painel inicial considera só ativos.
 - ⬜ **Rate limiting no agendamento público** — o endpoint `/agendar/[slug]` é aberto; falta limite de tentativas antes de divulgar o link amplamente
