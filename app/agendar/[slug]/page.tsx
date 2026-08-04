@@ -32,6 +32,7 @@ const ERROS: Record<string, string> = {
   horario: "Horário inválido. Escolha outro.",
   ocupado: "Ops! Esse horário acabou de ser preenchido. Escolha outro.",
   indisponivel: "Os agendamentos online estão temporariamente fechados.",
+  limite: "Muitas tentativas de agendamento. Tente novamente em alguns minutos.",
 };
 
 export default async function PublicBookingPage({

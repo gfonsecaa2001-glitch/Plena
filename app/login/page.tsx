@@ -6,12 +6,12 @@ import { loginAction } from "@/app/auth-actions";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string }>;
+  searchParams: Promise<{ erro?: string; min?: string }>;
 }) {
   // Quem já está logado (com conta existente) vai direto pro início.
   if (await getCurrentNutritionistOrNull()) redirect("/");
 
-  const { erro } = await searchParams;
+  const { erro, min } = await searchParams;
 
   return (
     <div className="auth-split">
@@ -38,7 +38,14 @@ export default async function LoginPage({
           </div>
           <h1>Bem-vindo de volta</h1>
 
-          {erro && <p className="auth-error">E-mail ou senha incorretos.</p>}
+          {erro === "limite" ? (
+            <p className="auth-error">
+              Muitas tentativas de entrada. Aguarde {min ?? "alguns"} minuto
+              {min === "1" ? "" : "s"} e tente de novo.
+            </p>
+          ) : (
+            erro && <p className="auth-error">E-mail ou senha incorretos.</p>
+          )}
 
           <form className="stack" action={loginAction}>
             <div className="field">

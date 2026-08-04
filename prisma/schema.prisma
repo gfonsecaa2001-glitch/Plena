@@ -117,6 +117,21 @@ model Appointment {
   createdAt      DateTime     @default(now())
 }
 
+// Contador de tentativas por janela de tempo, usado para limitar abuso nos
+// pontos abertos do sistema (login, cadastro e agendamento público).
+//
+// Fica no banco, e não em memória, porque o app roda em várias instâncias na
+// Vercel: um contador em memória seria zerado a cada instância nova e não
+// serviria de nada.
+model RateLimit {
+  key       String   @id // ex.: "login:ip:1.2.3.4" ou "login:email:a@b.com"
+  count     Int      @default(0)
+  windowAt  DateTime @default(now()) // início da janela atual
+  updatedAt DateTime @updatedAt
+
+  @@index([windowAt])
+}
+
 // Tabela de composição de alimentos.
 //
 // Base: TACO (Tabela Brasileira de Composição de Alimentos, UNICAMP/NEPA) —

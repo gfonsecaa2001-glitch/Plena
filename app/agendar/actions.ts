@@ -9,6 +9,9 @@ import { prisma } from "@/lib/prisma";
 import { buildSlots } from "@/lib/booking";
 import { todayISO } from "@/lib/datetime";
 import { pushEvent } from "@/lib/google-calendar";
+import { checkRateLimit, clientIp, limparAntigos } from "@/lib/rate-limit";
+
+const UMA_HORA = 60 * 60 * 1000;
 
 function clean(value: FormDataEntryValue | null, max = 120): string | null {
   const s = value?.toString().trim().slice(0, max);
@@ -27,6 +30,24 @@ export async function bookPublicAppointment(formData: FormData) {
   // Exigir ao menos uma forma de contato — sem isso o nutricionista não
   // consegue confirmar nem remarcar.
   if (!email && !phone) redirect(`/agendar/${slug}?erro=contato`);
+
+  // Duas chaves:
+  //  • por IP     → impede uma origem entupir várias agendas
+  //  • por agenda → impede lotar a agenda de UM nutricionista, mesmo que o
+  //                 ataque venha de IPs diferentes
+  //
+  // A ordem importa: só consumimos a cota da AGENDA se o IP passou. Se
+  // contássemos os dois de uma vez, alguém já bloqueado continuaria gastando
+  // a cota da agenda a cada tentativa e acabaria impedindo pacientes de
+  // verdade de agendar.
+  const ip = await clientIp();
+  void limparAntigos(UMA_HORA);
+
+  const porIp = await checkRateLimit(`booking:ip:${ip}`, 5, UMA_HORA);
+  if (!porIp.ok) redirect(`/agendar/${slug}?erro=limite&min=${porIp.retryAfterMin}`);
+
+  const porAgenda = await checkRateLimit(`booking:slug:${slug}`, 20, UMA_HORA);
+  if (!porAgenda.ok) redirect(`/agendar/${slug}?erro=limite&min=${porAgenda.retryAfterMin}`);
 
   const nutritionist = await prisma.nutritionist.findUnique({ where: { bookingSlug: slug } });
   if (!nutritionist?.bookingEnabled) redirect(`/agendar/${slug}?erro=indisponivel`);

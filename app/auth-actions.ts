@@ -5,8 +5,33 @@ import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
 import { signIn, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  checkRateLimit,
+  peekRateLimit,
+  clientIp,
+  limparAntigos,
+  primeiroBloqueio,
+} from "@/lib/rate-limit";
+
+const QUINZE_MIN = 15 * 60 * 1000;
+const UMA_HORA = 60 * 60 * 1000;
 
 export async function loginAction(formData: FormData) {
+  const email = formData.get("email")?.toString().toLowerCase().trim() ?? "";
+  const ip = await clientIp();
+
+  // Aqui só CONSULTAMOS, para dar uma mensagem clara ao usuário. Quem conta
+  // de fato é o authorize() em auth.ts — é por lá que passa toda tentativa,
+  // inclusive as que ignoram esta tela.
+  //  • por e-mail  → impede insistir na senha de UMA conta específica
+  //  • por IP      → impede varrer várias contas a partir da mesma origem
+  const porEmail = await peekRateLimit(`login:email:${email}`, 8, QUINZE_MIN);
+  const porIp = await peekRateLimit(`login:ip:${ip}`, 25, QUINZE_MIN);
+  void limparAntigos(QUINZE_MIN);
+
+  const bloqueio = primeiroBloqueio(porEmail, porIp);
+  if (bloqueio) redirect(`/login?erro=limite&min=${bloqueio.retryAfterMin}`);
+
   try {
     await signIn("credentials", {
       email: formData.get("email"),
@@ -23,6 +48,12 @@ export async function loginAction(formData: FormData) {
 }
 
 export async function signupAction(formData: FormData) {
+  // Sem limite, um robô criaria centenas de contas a partir da mesma origem.
+  const ip = await clientIp();
+  const limite = await checkRateLimit(`signup:ip:${ip}`, 5, UMA_HORA);
+  void limparAntigos(UMA_HORA);
+  if (!limite.ok) redirect(`/cadastro?erro=limite&min=${limite.retryAfterMin}`);
+
   const name = formData.get("name")?.toString().trim();
   const email = formData.get("email")?.toString().toLowerCase().trim();
   const password = formData.get("password")?.toString();

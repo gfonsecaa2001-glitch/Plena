@@ -6,11 +6,11 @@ import { signupAction } from "@/app/auth-actions";
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string }>;
+  searchParams: Promise<{ erro?: string; min?: string }>;
 }) {
   if (await getCurrentNutritionistOrNull()) redirect("/");
 
-  const { erro } = await searchParams;
+  const { erro, min } = await searchParams;
 
   return (
     <div className="auth-split">
@@ -37,6 +37,12 @@ export default async function SignupPage({
           </div>
           <h1>Criar conta</h1>
 
+          {erro === "limite" && (
+            <p className="auth-error">
+              Muitas contas criadas a partir daqui. Aguarde {min ?? "alguns"} minuto
+              {min === "1" ? "" : "s"} e tente de novo.
+            </p>
+          )}
           {erro === "existe" && <p className="auth-error">Já existe uma conta com esse e-mail.</p>}
           {erro === "dados" && (
             <p className="auth-error">Preencha todos os campos — a senha precisa de 8+ caracteres.</p>
