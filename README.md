@@ -46,4 +46,4 @@ npm run dev          # abre em http://localhost:3001
 - ⬜ **Billing** — Stripe, planos de assinatura
 - ✅ **Postgres em produção + deploy** — Neon (região São Paulo) + Vercel, deploy automático a cada push na `main`
 - ✅ **Histórico do acompanhamento** — modelo `Note` (evolução vinculada a consulta ou anotação avulsa), `Patient.status` (ativo/inativo/alta) e linha do tempo unificada na ficha do paciente (`app/pacientes/[id]/timeline.tsx`). Lista de pacientes filtra por situação; painel inicial considera só ativos.
-- ⬜ **Rate limiting no agendamento público** — o endpoint `/agendar/[slug]` é aberto; falta limite de tentativas antes de divulgar o link amplamente
+- ✅ **Limite de tentativas** — `lib/rate-limit.ts` + modelo `RateLimit` (contador por janela no banco). Login: 8/e-mail e 25/IP a cada 15 min, aplicado **dentro do `authorize()`** em `auth.ts` (a rota `/api/auth/callback/credentials` é pública e ignoraria um limite posto só na server action). Cadastro: 5/IP por hora. Agendamento público: 5/IP e 20/agenda por hora.
