@@ -15,17 +15,29 @@ function initials(name: string) {
     .toUpperCase();
 }
 
+const FILTROS = [
+  { value: "ativo", label: "Ativos" },
+  { value: "todos", label: "Todos" },
+  { value: "inativo", label: "Inativos" },
+  { value: "alta", label: "Alta" },
+];
+
 export default async function PatientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; status?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, status } = await searchParams;
   const nutritionist = await getCurrentNutritionist();
 
-  const patients = await prisma.patient.findMany({
+  // Padrão é mostrar só quem está em acompanhamento — é a lista de trabalho.
+  const filtro = FILTROS.some((f) => f.value === status) ? status! : "ativo";
+
+  const [patients, contagem] = await Promise.all([
+    prisma.patient.findMany({
     where: {
       nutritionistId: nutritionist.id,
+      ...(filtro === "todos" ? {} : { status: filtro }),
       ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
     },
     orderBy: { name: "asc" },
@@ -37,7 +49,18 @@ export default async function PatientsPage({
         take: 1,
       },
     },
-  });
+    }),
+    // Contagem por situação, para os números nas abas de filtro
+    prisma.patient.groupBy({
+      by: ["status"],
+      where: { nutritionistId: nutritionist.id },
+      _count: true,
+    }),
+  ]);
+
+  const porStatus = new Map(contagem.map((c) => [c.status, c._count]));
+  const total = contagem.reduce((s, c) => s + c._count, 0);
+  const contarFiltro = (v: string) => (v === "todos" ? total : (porStatus.get(v) ?? 0));
 
   return (
     <>
@@ -48,7 +71,8 @@ export default async function PatientsPage({
             <h1>Pacientes</h1>
             <p>
               {patients.length} paciente{patients.length === 1 ? "" : "s"}
-              {q ? ` encontrado${patients.length === 1 ? "" : "s"} para "${q}"` : ""}
+              {filtro !== "todos" ? ` · ${FILTROS.find((f) => f.value === filtro)!.label.toLowerCase()}` : ""}
+              {q ? ` · busca por "${q}"` : ""}
             </p>
           </div>
         </div>
@@ -57,12 +81,30 @@ export default async function PatientsPage({
         </Link>
       </div>
 
-      <form className="searchbar" style={{ marginBottom: 16 }}>
-        <span className="searchbar-icon">
-          <Icon name="search" size={16} />
-        </span>
-        <input type="search" name="q" placeholder="Buscar por nome…" defaultValue={q ?? ""} />
-      </form>
+      <div className="list-controls">
+        <form className="searchbar">
+          <span className="searchbar-icon">
+            <Icon name="search" size={16} />
+          </span>
+          <input type="search" name="q" placeholder="Buscar por nome…" defaultValue={q ?? ""} />
+          {filtro !== "ativo" && <input type="hidden" name="status" value={filtro} />}
+        </form>
+
+        <div className="filter-chips">
+          {FILTROS.map((f) => {
+            const href = `/pacientes?status=${f.value}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
+            return (
+              <Link
+                key={f.value}
+                href={href}
+                className={`filter-chip${filtro === f.value ? " active" : ""}`}
+              >
+                {f.label} <span>{contarFiltro(f.value)}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
 
       {patients.length === 0 ? (
         <div className="panel empty-state">
@@ -71,7 +113,14 @@ export default async function PatientsPage({
           <p className="muted">
             {q ? (
               <>
-                Nada para &quot;{q}&quot;. <Link href="/pacientes">Ver todos</Link>.
+                Nada para &quot;{q}&quot;. <Link href={`/pacientes?status=${filtro}`}>Limpar busca</Link>.
+              </>
+            ) : total > 0 ? (
+              // Existem pacientes, só não neste filtro — dizer "cadastre o
+              // primeiro" aqui seria enganoso.
+              <>
+                Nenhum paciente nesta situação.{" "}
+                <Link href="/pacientes?status=todos">Ver todos os {total}</Link>.
               </>
             ) : (
               <>
@@ -112,7 +161,12 @@ export default async function PatientsPage({
                         <strong>{p.name}</strong>
                       </Link>
                     </td>
-                    <td>{p.goal ?? "—"}</td>
+                    <td>
+                      {p.goal ?? "—"}
+                      {p.status !== "ativo" && (
+                        <span className={`badge-status ${p.status}`}>{p.status}</span>
+                      )}
+                    </td>
                     <td>{lastMeasurement?.weightKg ? `${lastMeasurement.weightKg} kg` : "—"}</td>
                     <td>
                       {nextAppointment ? (

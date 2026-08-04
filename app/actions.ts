@@ -260,6 +260,67 @@ export async function addMealItem(formData: FormData) {
   });
 }
 
+// ---------- Registro clínico e anotações ----------
+
+export async function addNote(formData: FormData) {
+  const patientId = formData.get("patientId")!.toString();
+  if (!(await requireOwnPatient(patientId))) return;
+
+  const content = optional(formData.get("content"));
+  if (!content) return;
+
+  const appointmentId = optional(formData.get("appointmentId"));
+
+  // Se a nota é a evolução de uma consulta, confirmamos que a consulta é
+  // deste paciente — o id vem do formulário e não é confiável.
+  if (appointmentId) {
+    const owned = await prisma.appointment.findFirst({
+      where: { id: appointmentId, patientId },
+      select: { id: true },
+    });
+    if (!owned) return;
+  }
+
+  await prisma.note.create({
+    data: {
+      patientId,
+      appointmentId,
+      kind: appointmentId ? "evolucao" : "nota",
+      content: content.slice(0, 5000),
+    },
+  });
+
+  revalidatePath(`/pacientes/${patientId}`);
+  revalidatePath("/");
+}
+
+export async function deleteNote(formData: FormData) {
+  const id = formData.get("id")!.toString();
+  const nutritionist = await getCurrentNutritionist();
+
+  const note = await prisma.note.findFirst({
+    where: { id, patient: { nutritionistId: nutritionist.id } },
+  });
+  if (!note) return;
+
+  await prisma.note.delete({ where: { id } });
+  revalidatePath(`/pacientes/${note.patientId}`);
+}
+
+export async function setPatientStatus(formData: FormData) {
+  const patientId = formData.get("patientId")!.toString();
+  if (!(await requireOwnPatient(patientId))) return;
+
+  const status = formData.get("status")?.toString() ?? "ativo";
+  if (!["ativo", "inativo", "alta"].includes(status)) return;
+
+  await prisma.patient.update({ where: { id: patientId }, data: { status } });
+
+  revalidatePath(`/pacientes/${patientId}`);
+  revalidatePath("/pacientes");
+  revalidatePath("/");
+}
+
 // Metas energéticas do paciente — decisão clínica, então tudo é editável.
 export async function saveEnergyTargets(formData: FormData) {
   const patientId = formData.get("patientId")!.toString();

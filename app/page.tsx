@@ -48,7 +48,9 @@ export default async function Dashboard() {
   const [patients, todayAppointments, upcomingAppointments, recentMeasurements, recentPlans] =
     await Promise.all([
       prisma.patient.findMany({
-        where: { nutritionistId: nutritionist.id },
+        // Só quem está em acompanhamento: alertar sobre quem teve alta ou
+        // parou de vir só geraria ruído.
+        where: { nutritionistId: nutritionist.id, status: "ativo" },
         select: {
           id: true,
           name: true,
@@ -185,7 +187,7 @@ export default async function Dashboard() {
             </div>
             <div className="stat">{patients.length}</div>
             <div className="label">
-              Pacientes
+              Pacientes ativos
               {newThisMonth > 0 && <span className="delta">+{newThisMonth} este mês</span>}
             </div>
           </div>

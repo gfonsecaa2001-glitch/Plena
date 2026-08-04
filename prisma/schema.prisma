@@ -51,6 +51,10 @@ model Patient {
   goal           String? // objetivo: emagrecimento, hipertrofia, saúde...
   anamnesis      String? // histórico clínico / anamnese em texto livre
 
+  // Situação no acompanhamento. Sem isso, quem parou de vir há um ano
+  // continua poluindo a lista e os alertas de "sem retorno".
+  status String @default("ativo") // ativo | inativo | alta
+
   // Prescrição energética. O gasto (GET) é calculado a partir de peso, altura,
   // idade, sexo e nível de atividade; a META é decisão clínica do
   // nutricionista (déficit para emagrecer, superávit para ganhar massa).
@@ -63,6 +67,26 @@ model Patient {
   measurements   Measurement[]
   appointments   Appointment[]
   mealPlans      MealPlan[]
+  notes          Note[]
+}
+
+// Registro clínico e anotações do acompanhamento.
+//
+// Um só modelo para os dois casos, porque ambos aparecem na mesma linha do
+// tempo e se comportam igual:
+//   • kind "evolucao" + appointmentId → a evolução escrita após uma consulta
+//   • kind "nota" (sem consulta)      → contato por telefone, observação avulsa
+model Note {
+  id            String   @id @default(cuid())
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointmentId String? // preenchido quando é a evolução de uma consulta
+  kind          String   @default("nota") // "evolucao" | "nota"
+  content       String
+  createdAt     DateTime @default(now())
+
+  @@index([patientId])
+  @@index([appointmentId])
 }
 
 // Uma avaliação antropométrica (medidas de uma data).

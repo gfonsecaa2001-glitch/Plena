@@ -9,6 +9,8 @@ import { mealIcon } from "@/lib/food-icons";
 import { Icon } from "@/lib/icons";
 import { LineChart, type ChartSeries } from "./line-chart";
 import { EnergyPanel } from "./energy-panel";
+import { Timeline } from "./timeline";
+import { StatusControl } from "./status-control";
 
 // Cores da paleta validada (script do guia de dataviz — CVD e contraste ok
 // sobre o card #fdfdfa): série 1 verde-oliva, série 2 caramelo.
@@ -52,10 +54,13 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
       measurements: { orderBy: { date: "desc" } },
       appointments: { orderBy: { scheduledAt: "desc" } },
       mealPlans: { orderBy: { createdAt: "desc" } },
+      notes: { orderBy: { createdAt: "desc" } },
     },
   });
 
   if (!patient) notFound();
+
+  const proximas = patient.appointments.filter((a) => a.scheduledAt >= new Date());
 
   const latest = patient.measurements[0];
   const bmi =
@@ -83,9 +88,12 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
             </p>
           </div>
         </div>
-        <Link className="btn secondary" href="/pacientes">
-          <Icon name="back" size={15} /> Voltar
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <StatusControl patientId={patient.id} status={patient.status} />
+          <Link className="btn secondary" href="/pacientes">
+            <Icon name="back" size={15} /> Voltar
+          </Link>
+        </div>
       </div>
 
       <div className="cards">
@@ -306,7 +314,9 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
           </button>
         </form>
 
-        {patient.appointments.length === 0 ? (
+        {/* Aqui ficam só as consultas ainda por vir. O histórico completo
+            aparece na linha do tempo, junto com o resto do acompanhamento. */}
+        {proximas.length === 0 ? (
           <p className="empty">Nenhuma consulta agendada.</p>
         ) : (
           <table>
@@ -318,11 +328,9 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
               </tr>
             </thead>
             <tbody>
-              {patient.appointments.map((a) => (
+              {proximas.map((a) => (
                 <tr key={a.id}>
-                  <td>
-                    {formatDateTime(a.scheduledAt)}
-                  </td>
+                  <td>{formatDateTime(a.scheduledAt)}</td>
                   <td>
                     <span className={`badge ${a.status}`}>{a.status}</span>
                   </td>
@@ -333,6 +341,14 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
           </table>
         )}
       </div>
+
+      <Timeline
+        patientId={patient.id}
+        appointments={patient.appointments}
+        measurements={patient.measurements}
+        mealPlans={patient.mealPlans}
+        notes={patient.notes}
+      />
     </>
   );
 }
