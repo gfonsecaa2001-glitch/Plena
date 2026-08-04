@@ -44,4 +44,5 @@ npm run dev          # abre em http://localhost:3001
 - ✅ **Cálculo nutricional** — tabela TACO (591 alimentos, `prisma/taco-foods.json`, carga com `npm run db:seed-foods`); TMB (Mifflin-St Jeor e Harris-Benedict) + GET na página do paciente; plano alimentar com macros por item/refeição/dia e barras vs. meta. Fórmulas e somatórios em `lib/nutrition.ts`. Planos no formato antigo (itens em texto puro) seguem funcionando — `lib/mealplan.ts` normaliza.
 - ⬜ **Lembretes de consulta** (WhatsApp/e-mail)
 - ⬜ **Billing** — Stripe, planos de assinatura
-- ⬜ **Postgres em produção** + deploy (Vercel + Neon/Supabase)
+- ✅ **Postgres em produção + deploy** — Neon (região São Paulo) + Vercel, deploy automático a cada push na `main`
+- ⬜ **Rate limiting no agendamento público** — o endpoint `/agendar/[slug]` é aberto; falta limite de tentativas antes de divulgar o link amplamente
