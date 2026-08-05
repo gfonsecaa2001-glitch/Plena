@@ -13,8 +13,8 @@ import { parseDateInput, parseDateTimeInput } from "@/lib/datetime";
 import { pushEvent, updateEvent, deleteEvent } from "@/lib/google-calendar";
 import { slugify } from "@/lib/booking";
 
-function optional(value: FormDataEntryValue | null): string | null {
-  const s = value?.toString().trim();
+function optional(value: FormDataEntryValue | null, max = 5000): string | null {
+  const s = value?.toString().trim().slice(0, max);
   return s ? s : null;
 }
 
@@ -260,6 +260,109 @@ export async function addMealItem(formData: FormData) {
   });
 }
 
+// ---------- Alimentos próprios e receitas ----------
+
+export async function createFood(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+
+  const name = optional(formData.get("name"));
+  if (!name) return;
+
+  // Modo receita: os macros vêm dos ingredientes, divididos pelo rendimento.
+  //
+  // O rendimento (peso final) importa porque preparar muda o peso: arroz
+  // absorve água e pesa mais; carne perde água e pesa menos. Sem isso, os
+  // valores por 100 g da preparação sairiam errados.
+  const ingredientesJson = optional(formData.get("ingredientes"), 8000);
+  if (ingredientesJson) {
+    let itens: { foodId: string; grams: number }[] = [];
+    try {
+      const bruto = JSON.parse(ingredientesJson);
+      if (Array.isArray(bruto)) {
+        itens = bruto
+          .filter((i) => i && typeof i.foodId === "string" && Number(i.grams) > 0)
+          .map((i) => ({ foodId: i.foodId as string, grams: Number(i.grams) }));
+      }
+    } catch {
+      return;
+    }
+    if (itens.length === 0) return;
+
+    const foods = await prisma.food.findMany({
+      where: {
+        id: { in: itens.map((i) => i.foodId) },
+        OR: [{ nutritionistId: null }, { nutritionistId: nutritionist.id }],
+      },
+    });
+    const porId = new Map(foods.map((f) => [f.id, f]));
+
+    let total = { kcal: 0, proteinG: 0, carbG: 0, fatG: 0 };
+    let pesoDosIngredientes = 0;
+    for (const item of itens) {
+      const f = porId.get(item.foodId);
+      if (!f) continue;
+      const fator = item.grams / 100;
+      total = {
+        kcal: total.kcal + f.kcal * fator,
+        proteinG: total.proteinG + f.proteinG * fator,
+        carbG: total.carbG + f.carbG * fator,
+        fatG: total.fatG + f.fatG * fator,
+      };
+      pesoDosIngredientes += item.grams;
+    }
+    if (pesoDosIngredientes === 0) return;
+
+    const rendimento = optionalNumber(formData.get("rendimento")) ?? pesoDosIngredientes;
+    const por100 = 100 / Math.max(rendimento, 1);
+
+    await prisma.food.create({
+      data: {
+        name,
+        category: optional(formData.get("category")) ?? "Preparações",
+        kcal: Math.round(total.kcal * por100 * 100) / 100,
+        proteinG: Math.round(total.proteinG * por100 * 100) / 100,
+        carbG: Math.round(total.carbG * por100 * 100) / 100,
+        fatG: Math.round(total.fatG * por100 * 100) / 100,
+        nutritionistId: nutritionist.id,
+      },
+    });
+    revalidatePath("/alimentos");
+    return;
+  }
+
+  // Modo manual: o nutricionista digita os valores do rótulo do produto.
+  const kcal = optionalNumber(formData.get("kcal"));
+  if (kcal === null || kcal < 0) return;
+
+  await prisma.food.create({
+    data: {
+      name,
+      category: optional(formData.get("category")) ?? "Meus alimentos",
+      kcal,
+      proteinG: Math.max(optionalNumber(formData.get("proteinG")) ?? 0, 0),
+      carbG: Math.max(optionalNumber(formData.get("carbG")) ?? 0, 0),
+      fatG: Math.max(optionalNumber(formData.get("fatG")) ?? 0, 0),
+      nutritionistId: nutritionist.id,
+    },
+  });
+
+  revalidatePath("/alimentos");
+}
+
+export async function deleteFood(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+  const id = formData.get("id")!.toString();
+
+  // Só apaga alimento PRÓPRIO — os da TACO são compartilhados por todos.
+  const meu = await prisma.food.findFirst({
+    where: { id, nutritionistId: nutritionist.id },
+  });
+  if (!meu) return;
+
+  await prisma.food.delete({ where: { id } });
+  revalidatePath("/alimentos");
+}
+
 // ---------- Registro clínico e anotações ----------
 
 export async function addNote(formData: FormData) {
@@ -354,6 +457,53 @@ export async function removeMeal(formData: FormData) {
   const mealIndex = Number(formData.get("mealIndex"));
 
   await updateMeals(planId, (meals) => meals.filter((_, i) => i !== mealIndex));
+}
+
+// Substituições: opções equivalentes que o paciente pode comer no lugar.
+//
+// A quantidade sugerida é a que iguala as CALORIAS do item original — é o
+// critério usado na prática para lista de substituições. O nutricionista pode
+// ajustar o valor antes de salvar.
+export async function addSubstitution(formData: FormData) {
+  const planId = formData.get("planId")!.toString();
+  const mealIndex = Number(formData.get("mealIndex"));
+  const itemIndex = Number(formData.get("itemIndex"));
+  const foodId = optional(formData.get("foodId"));
+  const grams = optionalNumber(formData.get("grams"));
+  if (!foodId || !grams || grams <= 0) return;
+
+  const nutritionist = await getCurrentNutritionist();
+  const food = await prisma.food.findFirst({
+    where: { id: foodId, OR: [{ nutritionistId: null }, { nutritionistId: nutritionist.id }] },
+  });
+  if (!food) return;
+
+  const arredondado = Math.round(Math.min(grams, 5000));
+
+  await updateMeals(planId, (meals) => {
+    const item = meals[mealIndex]?.items[itemIndex];
+    if (!item) return meals;
+    const subs = item.subs ?? [];
+    if (subs.length >= 6) return meals; // uma lista enorme confunde o paciente
+    subs.push({ text: `${arredondado} g de ${food.name}`, foodId: food.id, grams: arredondado });
+    item.subs = subs;
+    return meals;
+  });
+}
+
+export async function removeSubstitution(formData: FormData) {
+  const planId = formData.get("planId")!.toString();
+  const mealIndex = Number(formData.get("mealIndex"));
+  const itemIndex = Number(formData.get("itemIndex"));
+  const subIndex = Number(formData.get("subIndex"));
+
+  await updateMeals(planId, (meals) => {
+    const item = meals[mealIndex]?.items[itemIndex];
+    if (!item?.subs) return meals;
+    item.subs.splice(subIndex, 1);
+    if (item.subs.length === 0) delete item.subs;
+    return meals;
+  });
 }
 
 export async function removeMealItem(formData: FormData) {

@@ -7,9 +7,18 @@ import { formatDate } from "@/lib/datetime";
 import { foodIcon, mealIcon } from "@/lib/food-icons";
 import { Icon } from "@/lib/icons";
 import { ZERO, addMacros, macrosFor, roundMacros, macroSplit, type Macros } from "@/lib/nutrition";
-import { addMeal, removeMeal, removeMealItem, deleteMealPlan, addMealItem } from "@/app/actions";
+import {
+  addMeal,
+  removeMeal,
+  removeMealItem,
+  deleteMealPlan,
+  addMealItem,
+  addSubstitution,
+  removeSubstitution,
+} from "@/app/actions";
 import { PrintButton } from "./print-button";
 import { FoodPicker } from "./food-picker";
+import { SubPicker } from "./sub-picker";
 
 export const dynamic = "force-dynamic";
 
@@ -205,27 +214,67 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
                   const m = macrosOf(item);
                   const r = m ? roundMacros(m) : null;
                   return (
-                    <li key={itemIndex}>
-                      <span className="food-emoji">{foodIcon(item.text)}</span>
-                      <span className="food-text">{item.text}</span>
-                      {r ? (
-                        <span className="food-macros">
-                          <b>{r.kcal} kcal</b>
-                          <span>
-                            P {r.protein} · C {r.carb} · G {r.fat}
+                    <li key={itemIndex} className="meal-item">
+                      <div className="meal-item-main">
+                        <span className="food-emoji">{foodIcon(item.text)}</span>
+                        <span className="food-text">{item.text}</span>
+                        {r ? (
+                          <span className="food-macros">
+                            <b>{r.kcal} kcal</b>
+                            <span>
+                              P {r.protein} · C {r.carb} · G {r.fat}
+                            </span>
                           </span>
-                        </span>
-                      ) : (
-                        <span className="food-macros muted no-print">sem cálculo</span>
+                        ) : (
+                          <span className="food-macros muted no-print">sem cálculo</span>
+                        )}
+                        <form action={removeMealItem} className="no-print">
+                          <input type="hidden" name="planId" value={plan.id} />
+                          <input type="hidden" name="mealIndex" value={mealIndex} />
+                          <input type="hidden" name="itemIndex" value={itemIndex} />
+                          <button className="link-remove" type="submit" aria-label="Remover item">
+                            ×
+                          </button>
+                        </form>
+                      </div>
+
+                      {/* Substituições: o paciente leva impresso o que pode
+                          comer no lugar, sem precisar perguntar. */}
+                      {item.subs && item.subs.length > 0 && (
+                        <ul className="subs">
+                          {item.subs.map((s, subIndex) => (
+                            <li key={subIndex}>
+                              <span className="subs-label">ou</span>
+                              <span className="food-emoji small">{foodIcon(s.text)}</span>
+                              <span className="food-text">{s.text}</span>
+                              <form action={removeSubstitution} className="no-print">
+                                <input type="hidden" name="planId" value={plan.id} />
+                                <input type="hidden" name="mealIndex" value={mealIndex} />
+                                <input type="hidden" name="itemIndex" value={itemIndex} />
+                                <input type="hidden" name="subIndex" value={subIndex} />
+                                <button
+                                  className="link-remove"
+                                  type="submit"
+                                  aria-label="Remover substituição"
+                                >
+                                  ×
+                                </button>
+                              </form>
+                            </li>
+                          ))}
+                        </ul>
                       )}
-                      <form action={removeMealItem} className="no-print">
-                        <input type="hidden" name="planId" value={plan.id} />
-                        <input type="hidden" name="mealIndex" value={mealIndex} />
-                        <input type="hidden" name="itemIndex" value={itemIndex} />
-                        <button className="link-remove" type="submit" aria-label="Remover item">
-                          ×
-                        </button>
-                      </form>
+
+                      {/* Só faz sentido oferecer troca de item calculado */}
+                      {r && (
+                        <SubPicker
+                          planId={plan.id}
+                          mealIndex={mealIndex}
+                          itemIndex={itemIndex}
+                          kcalAlvo={r.kcal}
+                          action={addSubstitution}
+                        />
+                      )}
                     </li>
                   );
                 })}

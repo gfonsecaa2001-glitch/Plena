@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionistOrNull } from "@/lib/tenant";
+import { buildFoodSearch } from "@/lib/food-search";
 
 // Busca de alimentos para o seletor do plano alimentar.
 // Retorna os alimentos públicos da TACO + os criados pelo próprio nutricionista.
@@ -14,9 +15,12 @@ export async function GET(request: NextRequest) {
   const q = (request.nextUrl.searchParams.get("q") ?? "").trim();
   if (q.length < 2) return NextResponse.json({ foods: [] });
 
+  const busca = buildFoodSearch(q);
+  if (!busca) return NextResponse.json({ foods: [] });
+
   const foods = await prisma.food.findMany({
     where: {
-      name: { contains: q, mode: "insensitive" },
+      ...busca,
       OR: [{ nutritionistId: null }, { nutritionistId: nutritionist.id }],
     },
     orderBy: { name: "asc" },

@@ -52,6 +52,56 @@ describe("parseMeals — formato novo (com alimento e quantidade)", () => {
   });
 });
 
+describe("parseMeals — substituições", () => {
+  it("preserva as opções de troca de um item", () => {
+    const json = JSON.stringify([
+      {
+        name: "Almoço",
+        items: [
+          {
+            text: "100 g de Arroz",
+            foodId: "arroz",
+            grams: 100,
+            subs: [{ text: "130 g de Batata doce", foodId: "batata", grams: 130 }],
+          },
+        ],
+      },
+    ]);
+    expect(parseMeals(json)[0].items[0].subs).toEqual([
+      { text: "130 g de Batata doce", foodId: "batata", grams: 130 },
+    ]);
+  });
+
+  it("descarta substituições malformadas sem perder o item", () => {
+    const json = JSON.stringify([
+      {
+        name: "Almoço",
+        items: [
+          {
+            text: "100 g de Arroz",
+            foodId: "arroz",
+            grams: 100,
+            subs: [
+              { text: "ok", foodId: "x", grams: 50 },
+              { text: "sem gramas", foodId: "y" },
+              { foodId: "z", grams: 10 },
+              null,
+            ],
+          },
+        ],
+      },
+    ]);
+    const item = parseMeals(json)[0].items[0];
+    expect(item.text).toBe("100 g de Arroz");
+    expect(item.subs).toEqual([{ text: "ok", foodId: "x", grams: 50 }]);
+  });
+
+  it("item sem substituição não ganha o campo", () => {
+    const json = JSON.stringify([{ name: "Café", items: [{ text: "Ovo" }] }]);
+    expect(parseMeals(json)[0].items[0].subs).toBeUndefined();
+  });
+});
+
 describe("parseMeals — entradas inválidas não podem derrubar a página", () => {
   it.each([
     ["JSON quebrado", "{ isso não é json"],

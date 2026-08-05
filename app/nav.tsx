@@ -12,6 +12,7 @@ const ITEMS: { href: string; label: string; icon: IconName }[] = [
   { href: "/pacientes", label: "Pacientes", icon: "patients" },
   { href: "/agenda", label: "Agenda", icon: "calendar" },
   { href: "/planos", label: "Planos alimentares", icon: "meal" },
+  { href: "/alimentos", label: "Meus alimentos", icon: "clipboard" },
   { href: "/agendamento", label: "Link de agendamento", icon: "link" },
   { href: "/integracoes", label: "Integrações", icon: "settings" },
 ];
