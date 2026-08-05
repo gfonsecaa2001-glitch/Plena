@@ -273,16 +273,113 @@ async function updateMeals(
   revalidatePath(`/planos/${planId}`);
 }
 
+// Cria um plano do zero, a partir de um modelo, ou copiando outro plano do
+// mesmo paciente. O conteúdo é sempre COPIADO — depois de criado, o plano vive
+// a vida dele: mexer nele não altera o modelo, e mexer no modelo não altera os
+// planos que já saíram dele.
 export async function createMealPlan(formData: FormData) {
   const patientId = formData.get("patientId")!.toString();
   if (!(await requireOwnPatient(patientId))) return;
-  const title = optional(formData.get("title")) ?? "Plano alimentar";
+
+  const origem = optional(formData.get("origem")); // "" | "modelo:ID" | "plano:ID"
+  let content = "[]";
+  let tituloPadrao = "Plano alimentar";
+
+  if (origem?.startsWith("modelo:")) {
+    const nutritionist = await getCurrentNutritionist();
+    const modelo = await prisma.planTemplate.findFirst({
+      where: { id: origem.slice(7), nutritionistId: nutritionist.id },
+    });
+    if (modelo) {
+      content = modelo.content;
+      tituloPadrao = modelo.title;
+    }
+  } else if (origem?.startsWith("plano:")) {
+    // Só copia plano do MESMO paciente — o id vem do formulário.
+    const anterior = await prisma.mealPlan.findFirst({
+      where: { id: origem.slice(6), patientId },
+    });
+    if (anterior) {
+      content = anterior.content;
+      tituloPadrao = `${anterior.title} (cópia)`;
+    }
+  }
 
   const plan = await prisma.mealPlan.create({
-    data: { patientId, title },
+    data: { patientId, title: optional(formData.get("title")) ?? tituloPadrao, content },
   });
 
   redirect(`/planos/${plan.id}`);
+}
+
+// ---------- Modelos de plano ----------
+
+export async function savePlanAsTemplate(formData: FormData) {
+  const planId = formData.get("planId")!.toString();
+  const plan = await requireOwnPlan(planId);
+  if (!plan) return;
+
+  const nutritionist = await getCurrentNutritionist();
+  await prisma.planTemplate.create({
+    data: {
+      nutritionistId: nutritionist.id,
+      title: optional(formData.get("title"), 120) ?? plan.title,
+      content: plan.content, // cópia: o modelo não acompanha edições do plano
+    },
+  });
+
+  revalidatePath("/modelos");
+  redirect("/modelos?salvo=1");
+}
+
+export async function renameTemplate(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+  const id = formData.get("id")!.toString();
+  const title = optional(formData.get("title"), 120);
+  if (!title) return;
+
+  const meu = await prisma.planTemplate.findFirst({
+    where: { id, nutritionistId: nutritionist.id },
+  });
+  if (!meu) return;
+
+  await prisma.planTemplate.update({ where: { id }, data: { title } });
+  revalidatePath("/modelos");
+}
+
+export async function deleteTemplate(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+  const id = formData.get("id")!.toString();
+
+  const meu = await prisma.planTemplate.findFirst({
+    where: { id, nutritionistId: nutritionist.id },
+  });
+  if (!meu) return;
+
+  await prisma.planTemplate.delete({ where: { id } });
+  revalidatePath("/modelos");
+}
+
+// Copia um plano para OUTRO paciente — o caso de dois pacientes com a mesma
+// conduta, sem precisar virar modelo antes.
+//
+// O link de compartilhamento NÃO é copiado: cada plano tem o seu, e clonar o
+// token daria ao paciente novo um endereço que já está no WhatsApp do antigo.
+export async function copyPlanToPatient(formData: FormData) {
+  const planId = formData.get("planId")!.toString();
+  const plan = await requireOwnPlan(planId);
+  if (!plan) return;
+
+  const destinoId = formData.get("destinoId")?.toString() ?? "";
+  const destino = await requireOwnPatient(destinoId);
+  if (!destino) return;
+
+  const novo = await prisma.mealPlan.create({
+    data: { patientId: destino.id, title: plan.title, content: plan.content },
+  });
+
+  revalidatePath(`/pacientes/${destino.id}`);
+  redirect(`/planos/${novo.id}`);
 }
 
 export async function addMeal(formData: FormData) {

@@ -74,6 +74,13 @@ export default async function PatientPage({
 
   if (!patient) notFound();
 
+  // Modelos do nutricionista, para começar um plano já pronto em vez do zero.
+  const modelos = await prisma.planTemplate.findMany({
+    where: { nutritionistId: nutritionist.id },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, title: true },
+  });
+
   const proximas = patient.appointments.filter((a) => a.scheduledAt >= new Date());
 
   // A mensagem do botão de WhatsApp muda conforme a situação do paciente —
@@ -302,9 +309,37 @@ export default async function PatientPage({
         </h2>
         <form className="inline-form" action={createMealPlan} style={{ marginBottom: 14 }}>
           <input type="hidden" name="patientId" value={patient.id} />
-          <div className="field" style={{ flex: 1 }}>
-            <label>Título do novo plano</label>
-            <input name="title" placeholder="Ex.: Plano de emagrecimento — julho" />
+          <div className="field" style={{ flex: 1, minWidth: 200 }}>
+            <label htmlFor="plan-title">Título do novo plano</label>
+            <input
+              id="plan-title"
+              name="title"
+              placeholder="Deixe vazio para usar o nome da origem"
+            />
+          </div>
+          <div className="field" style={{ minWidth: 210 }}>
+            <label htmlFor="plan-origem">Começar de</label>
+            <select id="plan-origem" name="origem" defaultValue="">
+              <option value="">Plano em branco</option>
+              {modelos.length > 0 && (
+                <optgroup label="Meus modelos">
+                  {modelos.map((m) => (
+                    <option key={m.id} value={`modelo:${m.id}`}>
+                      {m.title}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {patient.mealPlans.length > 0 && (
+                <optgroup label="Planos deste paciente">
+                  {patient.mealPlans.map((p) => (
+                    <option key={p.id} value={`plano:${p.id}`}>
+                      {p.title}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
           </div>
           <button className="btn small" type="submit">
             Criar plano

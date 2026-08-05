@@ -38,6 +38,7 @@ model Nutritionist {
   patients     Patient[]
   appointments Appointment[]
   charges      Charge[]
+  planTemplates PlanTemplate[]
 
   // Valor padrão da consulta, em centavos — só para preencher o formulário.
   defaultPriceCents Int?
@@ -209,6 +210,24 @@ model Food {
   createdAt      DateTime @default(now())
 
   @@index([name])
+  @@index([nutritionistId])
+}
+
+// Modelo de plano: a estrutura pronta que o nutricionista reaproveita.
+//
+// É uma tabela SEPARADA do MealPlan de propósito. Um modelo não pertence a
+// paciente nenhum — pertence ao nutricionista — e não deve aparecer no
+// histórico de ninguém, nem ser compartilhado por link, nem contar nas
+// estatísticas de acompanhamento. Encaixar isso no MealPlan exigiria um
+// patientId nulo e um "se for modelo, ignore" espalhado por todas as telas.
+model PlanTemplate {
+  id             String       @id @default(cuid())
+  nutritionistId String
+  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [id], onDelete: Cascade)
+  title          String
+  content        String       @default("[]") // mesmo formato do MealPlan.content
+  createdAt      DateTime     @default(now())
+
   @@index([nutritionistId])
 }
 

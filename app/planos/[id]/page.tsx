@@ -21,6 +21,7 @@ import { isShareActive, shareUrl, siteUrl } from "@/lib/share";
 import { WaButton } from "@/app/wa-button";
 import { PrintButton } from "./print-button";
 import { SharePanel } from "./share-panel";
+import { ReusePanel } from "./reuse-panel";
 import { FoodPicker } from "./food-picker";
 import { SubPicker } from "./sub-picker";
 
@@ -95,6 +96,13 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
   const linkAtivo = isShareActive(plan.shareToken, plan.shareExpiresAt, new Date());
   const link = linkAtivo ? shareUrl(plan.shareToken!, siteUrl()) : null;
   const mensagemPlano = planoPronto(p.name, nutritionist.name, plan.title, link);
+
+  // Destinos possíveis para uma cópia: os outros pacientes desta conta.
+  const outrosPacientes = await prisma.patient.findMany({
+    where: { nutritionistId: nutritionist.id, id: { not: plan.patientId }, status: "ativo" },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
 
   return (
     <>
@@ -318,6 +326,12 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
           </div>
         );
       })}
+
+      <ReusePanel
+        planId={plan.id}
+        planTitle={plan.title}
+        outrosPacientes={outrosPacientes}
+      />
 
       <SharePanel
         planId={plan.id}
