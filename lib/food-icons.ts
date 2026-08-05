@@ -14,10 +14,12 @@ const RULES: Rule[] = [
   // Proteínas
   { icon: "🥚", terms: ["ovo", "ovos", "clara de ovo", "omelete"] },
   { icon: "🍗", terms: ["frango", "galinha", "peito de frango", "sobrecoxa"] },
-  { icon: "🥩", terms: ["carne", "bife", "patinho", "alcatra", "acem", "file", "picanha", "boi"] },
-  { icon: "🥓", terms: ["bacon", "linguica", "presunto", "salsicha"] },
+  // Peixes e camarão vêm ANTES da carne vermelha de propósito: "filé de
+  // salmão" casaria com "file" (de filé mignon) e ganharia ícone de bife.
   { icon: "🐟", terms: ["peixe", "salmao", "tilapia", "atum", "sardinha", "merluza", "bacalhau"] },
   { icon: "🍤", terms: ["camarao", "frutos do mar", "lula"] },
+  { icon: "🥩", terms: ["carne", "bife", "patinho", "alcatra", "acem", "file", "picanha", "boi"] },
+  { icon: "🥓", terms: ["bacon", "linguica", "presunto", "salsicha"] },
   { icon: "🌭", terms: ["porco", "lombo", "costela"] },
   { icon: "🫘", terms: ["feijao", "lentilha", "grao de bico", "ervilha", "soja", "leguminosa"] },
   { icon: "🥜", terms: ["amendoim", "castanha", "noz", "nozes", "amendoa", "pasta de amendoim", "oleaginosa"] },
