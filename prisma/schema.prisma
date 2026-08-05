@@ -37,6 +37,34 @@ model Nutritionist {
   bookingSlotMin Int      @default(60) // duração de cada encaixe, em minutos
   patients     Patient[]
   appointments Appointment[]
+  charges      Charge[]
+
+  // Valor padrão da consulta, em centavos — só para preencher o formulário.
+  defaultPriceCents Int?
+}
+
+// Cobrança: uma consulta, um pacote ou qualquer serviço a receber.
+//
+// O valor fica em CENTAVOS (inteiro). Guardar dinheiro como decimal quebrado
+// acumula erro de arredondamento — 0,1 + 0,2 não dá exatamente 0,3 em ponto
+// flutuante, e num relatório de faturamento isso vira diferença de caixa.
+model Charge {
+  id             String       @id @default(cuid())
+  nutritionistId String
+  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [id])
+  patientId      String
+  patient        Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  description String
+  amountCents Int
+  status      String    @default("pendente") // pendente | pago | cancelado
+  dueDate     DateTime?
+  paidAt      DateTime?
+  method      String? // pix | dinheiro | cartao | transferencia | outro
+  createdAt   DateTime  @default(now())
+
+  @@index([nutritionistId, status])
+  @@index([patientId])
 }
 
 model Patient {
@@ -68,6 +96,7 @@ model Patient {
   appointments   Appointment[]
   mealPlans      MealPlan[]
   notes          Note[]
+  charges        Charge[]
 }
 
 // Registro clínico e anotações do acompanhamento.

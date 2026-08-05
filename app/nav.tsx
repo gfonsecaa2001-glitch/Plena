@@ -13,6 +13,7 @@ const ITEMS: { href: string; label: string; icon: IconName }[] = [
   { href: "/agenda", label: "Agenda", icon: "calendar" },
   { href: "/planos", label: "Planos alimentares", icon: "meal" },
   { href: "/alimentos", label: "Meus alimentos", icon: "clipboard" },
+  { href: "/financeiro", label: "Financeiro", icon: "wallet" },
   { href: "/agendamento", label: "Link de agendamento", icon: "link" },
   { href: "/integracoes", label: "Integrações", icon: "settings" },
 ];
@@ -36,12 +37,6 @@ export function SidebarNav({ isAdmin = false }: { isAdmin?: boolean }) {
           </Link>
         );
       })}
-      <div className="soon">
-        <Icon name="wallet" />
-        <span>
-          Financeiro<small>em breve</small>
-        </span>
-      </div>
 
       {isAdmin && (
         <Link

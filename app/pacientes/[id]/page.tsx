@@ -5,6 +5,7 @@ import { getCurrentNutritionist } from "@/lib/tenant";
 import { addMeasurement, addAppointment, createMealPlan } from "@/app/actions";
 import { parseMeals } from "@/lib/mealplan";
 import { formatDate, formatDateTime } from "@/lib/datetime";
+import { formatCents } from "@/lib/money";
 import { mealIcon } from "@/lib/food-icons";
 import { Icon } from "@/lib/icons";
 import { LineChart, type ChartSeries } from "./line-chart";
@@ -55,6 +56,7 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
       appointments: { orderBy: { scheduledAt: "desc" } },
       mealPlans: { orderBy: { createdAt: "desc" } },
       notes: { orderBy: { createdAt: "desc" } },
+      charges: { orderBy: { createdAt: "desc" }, take: 8 },
     },
   });
 
@@ -341,6 +343,52 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
           </table>
         )}
       </div>
+
+      {patient.charges.length > 0 && (
+        <div className="panel">
+          <h2 className="section-title">
+            <Icon name="wallet" size={17} /> Financeiro
+          </h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Situação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {patient.charges.map((c) => (
+                <tr key={c.id}>
+                  <td>
+                    {c.description}
+                    {c.dueDate && (
+                      <div className="muted" style={{ fontSize: 12 }}>
+                        vence em {formatDate(c.dueDate)}
+                      </div>
+                    )}
+                  </td>
+                  <td>
+                    <strong>{formatCents(c.amountCents)}</strong>
+                  </td>
+                  <td>
+                    <span className={`badge-cobranca ${c.status}`}>
+                      {c.status === "pago"
+                        ? "recebido"
+                        : c.status === "pendente"
+                          ? "em aberto"
+                          : "cancelado"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Link className="see-all" href="/financeiro">
+            gerenciar no Financeiro →
+          </Link>
+        </div>
+      )}
 
       <Timeline
         patientId={patient.id}

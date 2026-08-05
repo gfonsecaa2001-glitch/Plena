@@ -12,6 +12,7 @@ import { parseMeals, serializeMeals } from "@/lib/mealplan";
 import { parseDateInput, parseDateTimeInput } from "@/lib/datetime";
 import { pushEvent, updateEvent, deleteEvent } from "@/lib/google-calendar";
 import { slugify } from "@/lib/booking";
+import { parseMoneyToCents } from "@/lib/money";
 
 function optional(value: FormDataEntryValue | null, max = 5000): string | null {
   const s = value?.toString().trim().slice(0, max);
@@ -258,6 +259,90 @@ export async function addMealItem(formData: FormData) {
     meals[mealIndex]?.items.push({ text });
     return meals;
   });
+}
+
+// ---------- Financeiro ----------
+
+export async function createCharge(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+  const patientId = formData.get("patientId")!.toString();
+  if (!(await requireOwnPatient(patientId))) return;
+
+  const amountCents = parseMoneyToCents(formData.get("amount")?.toString());
+  if (!amountCents || amountCents <= 0) return;
+
+  const dueDate = optional(formData.get("dueDate"));
+  const jaPago = Boolean(formData.get("jaPago"));
+
+  await prisma.charge.create({
+    data: {
+      nutritionistId: nutritionist.id,
+      patientId,
+      description: optional(formData.get("description"), 200) ?? "Consulta",
+      amountCents,
+      dueDate: dueDate ? parseDateInput(dueDate) : null,
+      status: jaPago ? "pago" : "pendente",
+      paidAt: jaPago ? new Date() : null,
+      method: jaPago ? optional(formData.get("method"), 20) : null,
+    },
+  });
+
+  revalidatePath("/financeiro");
+  revalidatePath(`/pacientes/${patientId}`);
+  revalidatePath("/");
+}
+
+export async function setChargeStatus(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+  const id = formData.get("id")!.toString();
+  const status = formData.get("status")?.toString() ?? "";
+  if (!["pendente", "pago", "cancelado"].includes(status)) return;
+
+  const cobranca = await prisma.charge.findFirst({
+    where: { id, nutritionistId: nutritionist.id },
+  });
+  if (!cobranca) return;
+
+  await prisma.charge.update({
+    where: { id },
+    data: {
+      status,
+      // A data de recebimento acompanha o status: virou "pago" agora, a data
+      // é agora; voltou para em aberto, a data é apagada.
+      paidAt: status === "pago" ? (cobranca.paidAt ?? new Date()) : null,
+      method: status === "pago" ? (optional(formData.get("method"), 20) ?? cobranca.method) : null,
+    },
+  });
+
+  revalidatePath("/financeiro");
+  revalidatePath(`/pacientes/${cobranca.patientId}`);
+  revalidatePath("/");
+}
+
+export async function deleteCharge(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+  const id = formData.get("id")!.toString();
+
+  const cobranca = await prisma.charge.findFirst({
+    where: { id, nutritionistId: nutritionist.id },
+  });
+  if (!cobranca) return;
+
+  await prisma.charge.delete({ where: { id } });
+  revalidatePath("/financeiro");
+  revalidatePath(`/pacientes/${cobranca.patientId}`);
+}
+
+export async function saveDefaultPrice(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+  const cents = parseMoneyToCents(formData.get("defaultPrice")?.toString());
+
+  await prisma.nutritionist.update({
+    where: { id: nutritionist.id },
+    data: { defaultPriceCents: cents && cents > 0 ? cents : null },
+  });
+
+  revalidatePath("/financeiro");
 }
 
 // ---------- Alimentos próprios e receitas ----------
