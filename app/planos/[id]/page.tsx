@@ -16,9 +16,11 @@ import {
   addSubstitution,
   removeSubstitution,
 } from "@/app/actions";
-import { planoPronto } from "@/lib/whatsapp";
+import { planoPronto, whatsappLink } from "@/lib/whatsapp";
+import { isShareActive, shareUrl, siteUrl } from "@/lib/share";
 import { WaButton } from "@/app/wa-button";
 import { PrintButton } from "./print-button";
+import { SharePanel } from "./share-panel";
 import { FoodPicker } from "./food-picker";
 import { SubPicker } from "./sub-picker";
 
@@ -89,6 +91,11 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
   const p = plan.patient;
   const temMeta = Boolean(p.kcalTarget || p.proteinTarget || p.carbTarget || p.fatTarget);
 
+  // Link do paciente: só existe se estiver gerado E dentro do prazo.
+  const linkAtivo = isShareActive(plan.shareToken, plan.shareExpiresAt, new Date());
+  const link = linkAtivo ? shareUrl(plan.shareToken!, siteUrl()) : null;
+  const mensagemPlano = planoPronto(p.name, nutritionist.name, plan.title, link);
+
   return (
     <>
       {/* Cabeçalho que só aparece no papel: o plano impresso é um documento
@@ -129,7 +136,7 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }} className="no-print">
-          <WaButton phone={p.phone} message={planoPronto(p.name, nutritionist.name, plan.title)} />
+          <WaButton phone={p.phone} message={mensagemPlano} />
           <PrintButton />
           <Link className="btn secondary no-print" href={`/pacientes/${plan.patientId}`}>
             <Icon name="back" size={15} /> Voltar
@@ -311,6 +318,13 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
           </div>
         );
       })}
+
+      <SharePanel
+        planId={plan.id}
+        url={link}
+        expiraEm={plan.shareExpiresAt ? formatDate(plan.shareExpiresAt) : null}
+        whatsappHref={whatsappLink(p.phone, mensagemPlano)}
+      />
 
       <div className="panel no-print">
         <h2 className="section-title">

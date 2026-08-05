@@ -90,11 +90,27 @@ export function cobrancaPendente(
   ].join("\n");
 }
 
-export function planoPronto(patientName: string, nutriName: string, titulo: string): string {
+// Com link, a mensagem entrega o plano; sem link, ela só avisa que está pronto
+// e o nutricionista manda o PDF em seguida. São duas conversas diferentes.
+export function planoPronto(
+  patientName: string,
+  nutriName: string,
+  titulo: string,
+  link?: string | null
+): string {
+  const miolo = link
+    ? [
+        `Seu plano alimentar "${titulo}" está pronto:`,
+        link,
+        "",
+        "Pode abrir pelo celular quando quiser — esse link mostra sempre a versão mais recente.",
+      ]
+    : [`Seu plano alimentar "${titulo}" está pronto. Vou te enviar em seguida.`];
+
   return [
     `Oi, ${firstName(patientName)}!`,
     "",
-    `Seu plano alimentar "${titulo}" está pronto. Vou te enviar em seguida.`,
+    ...miolo,
     "",
     "Leia com calma e me manda suas dúvidas — a gente ajusta o que precisar.",
     "",

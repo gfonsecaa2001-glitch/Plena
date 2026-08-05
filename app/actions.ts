@@ -19,6 +19,7 @@ import {
 import { pushEvent, updateEvent, deleteEvent } from "@/lib/google-calendar";
 import { slugify } from "@/lib/booking";
 import { parseMoneyToCents } from "@/lib/money";
+import { generateShareToken, defaultExpiry } from "@/lib/share";
 
 function optional(value: FormDataEntryValue | null, max = 5000): string | null {
   const s = value?.toString().trim().slice(0, max);
@@ -729,6 +730,42 @@ export async function removeMealItem(formData: FormData) {
     meals[mealIndex]?.items.splice(itemIndex, 1);
     return meals;
   });
+}
+
+// ---------- Link do plano para o paciente ----------
+
+// Cria (ou renova) o endereço secreto que o paciente abre no celular.
+//
+// Renovar gera um token NOVO em vez de só esticar o prazo: se o link antigo
+// vazou, esticar a validade prolongaria o vazamento. Token novo derruba o
+// anterior na hora.
+export async function sharePlan(formData: FormData) {
+  const planId = formData.get("planId")!.toString();
+  if (!(await requireOwnPlan(planId))) return;
+
+  await prisma.mealPlan.update({
+    where: { id: planId },
+    data: {
+      shareToken: generateShareToken(),
+      shareExpiresAt: defaultExpiry(new Date()),
+    },
+  });
+
+  revalidatePath(`/planos/${planId}`);
+}
+
+// Corta o acesso imediatamente. Apagar o token é o que faz o link antigo
+// virar página inexistente — não basta marcar como vencido.
+export async function revokePlanShare(formData: FormData) {
+  const planId = formData.get("planId")!.toString();
+  if (!(await requireOwnPlan(planId))) return;
+
+  await prisma.mealPlan.update({
+    where: { id: planId },
+    data: { shareToken: null, shareExpiresAt: null },
+  });
+
+  revalidatePath(`/planos/${planId}`);
 }
 
 export async function deleteMealPlan(formData: FormData) {

@@ -221,4 +221,12 @@ model MealPlan {
   title     String
   content   String   @default("[]") // JSON: [{ meal: "Café da manhã", items: ["..."] }]
   createdAt DateTime @default(now())
+
+  // Link para o paciente ver o plano no celular, sem login.
+  //
+  // O endereço secreto NÃO é senha: quem receber o link vê o plano. Por isso
+  // ele tem validade e pode ser revogado — é dado de saúde circulando por
+  // WhatsApp, e um link eterno acaba encaminhado para o grupo da família.
+  shareToken     String?   @unique
+  shareExpiresAt DateTime?
 }
