@@ -5,6 +5,8 @@ import { formatCents, centsToInput, labelMetodo, METODOS } from "@/lib/money";
 import { formatDate, currentMonth, todayISO } from "@/lib/datetime";
 import { Icon } from "@/lib/icons";
 import { createCharge, setChargeStatus, deleteCharge, saveDefaultPrice } from "@/app/actions";
+import { cobrancaPendente } from "@/lib/whatsapp";
+import { WaButton } from "@/app/wa-button";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +43,7 @@ export default async function FinancePage({
         ...(filtro === "todos" ? {} : { status: filtro }),
       },
       orderBy: [{ status: "asc" }, { dueDate: "asc" }, { createdAt: "desc" }],
-      include: { patient: { select: { id: true, name: true } } },
+      include: { patient: { select: { id: true, name: true, phone: true } } },
       take: 200,
     }),
     prisma.patient.findMany({
@@ -260,7 +262,29 @@ export default async function FinancePage({
                       </span>
                     </td>
                     <td>
-                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 6,
+                          justifyContent: "flex-end",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        {c.status === "pendente" && (
+                          <WaButton
+                            phone={c.patient.phone}
+                            message={cobrancaPendente(
+                              c.patient.name,
+                              nutritionist.name,
+                              c.description,
+                              formatCents(c.amountCents),
+                              c.dueDate
+                            )}
+                            label="Cobrar"
+                            small
+                            title="Abre o WhatsApp com a mensagem de cobrança pronta"
+                          />
+                        )}
                         {c.status !== "pago" && (
                           <form action={setChargeStatus}>
                             <input type="hidden" name="id" value={c.id} />

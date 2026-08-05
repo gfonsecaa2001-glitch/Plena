@@ -14,7 +14,9 @@ const ITEMS: { href: string; label: string; icon: IconName }[] = [
   { href: "/planos", label: "Planos alimentares", icon: "meal" },
   { href: "/alimentos", label: "Meus alimentos", icon: "clipboard" },
   { href: "/financeiro", label: "Financeiro", icon: "wallet" },
+  { href: "/alertas", label: "Alertas", icon: "bell" },
   { href: "/agendamento", label: "Link de agendamento", icon: "link" },
+  { href: "/perfil", label: "Meu perfil", icon: "award" },
   { href: "/integracoes", label: "Integrações", icon: "settings" },
 ];
 

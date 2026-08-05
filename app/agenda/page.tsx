@@ -4,6 +4,8 @@ import { getCurrentNutritionist } from "@/lib/tenant";
 import { setAppointmentStatus } from "@/app/actions";
 import { formatDateTime } from "@/lib/datetime";
 import { Icon } from "@/lib/icons";
+import { lembreteConsulta } from "@/lib/whatsapp";
+import { WaButton } from "@/app/wa-button";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +63,14 @@ export default async function AgendaPage() {
         <td>{a.notes ?? "—"}</td>
         <td>
           {showActions && a.status === "agendada" && (
-            <div style={{ display: "flex", gap: 6 }}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+              <WaButton
+                phone={a.patient.phone}
+                message={lembreteConsulta(a.patient.name, nutritionist.name, a.scheduledAt)}
+                label="Lembrar"
+                small
+                title="Abre o WhatsApp com o lembrete desta consulta"
+              />
               <form action={setAppointmentStatus}>
                 <input type="hidden" name="id" value={a.id} />
                 <input type="hidden" name="status" value="realizada" />

@@ -16,6 +16,8 @@ import {
   addSubstitution,
   removeSubstitution,
 } from "@/app/actions";
+import { planoPronto } from "@/lib/whatsapp";
+import { WaButton } from "@/app/wa-button";
 import { PrintButton } from "./print-button";
 import { FoodPicker } from "./food-picker";
 import { SubPicker } from "./sub-picker";
@@ -89,7 +91,30 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <div className="page-header">
+      {/* Cabeçalho que só aparece no papel: o plano impresso é um documento
+          clínico, e precisa dizer quem prescreveu e para quem. */}
+      <div className="print-only print-brand">
+        <h1>{nutritionist.clinic || nutritionist.name}</h1>
+        <p className="print-crn">
+          {nutritionist.clinic ? `${nutritionist.name} · ` : ""}
+          {nutritionist.crn ?? "Nutricionista"}
+        </p>
+        {(nutritionist.phone || nutritionist.city) && (
+          <p className="print-contact">
+            {[nutritionist.phone, nutritionist.city].filter(Boolean).join(" · ")}
+          </p>
+        )}
+        <div className="print-for">
+          <span>
+            <strong>{p.name}</strong> — {plan.title}
+          </span>
+          <span>{formatDate(plan.createdAt)}</span>
+        </div>
+      </div>
+
+      {/* No papel quem identifica o documento é o cabeçalho de marca acima;
+          este aqui é a navegação da tela e sairia duplicado. */}
+      <div className="page-header no-print">
         <div className="title-with-icon">
           <span className="page-emoji">🍽️</span>
           <div>
@@ -103,7 +128,8 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
             </p>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8 }} className="no-print">
+          <WaButton phone={p.phone} message={planoPronto(p.name, nutritionist.name, plan.title)} />
           <PrintButton />
           <Link className="btn secondary no-print" href={`/pacientes/${plan.patientId}`}>
             <Icon name="back" size={15} /> Voltar
@@ -304,6 +330,12 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
             Adicionar
           </button>
         </form>
+      </div>
+
+      <div className="print-only print-footer">
+        Plano elaborado por {nutritionist.name}
+        {nutritionist.crn ? ` — ${nutritionist.crn}` : ""}. Prescrição individual: não
+        compartilhe nem reutilize para outra pessoa.
       </div>
 
       <form action={deleteMealPlan} className="no-print" style={{ marginTop: 8 }}>

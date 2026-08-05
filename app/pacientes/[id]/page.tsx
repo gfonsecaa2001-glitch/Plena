@@ -2,16 +2,21 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
-import { addMeasurement, addAppointment, createMealPlan } from "@/app/actions";
+import { addMeasurement, addAppointment, createMealPlan, addSkinfold } from "@/app/actions";
+import { PROTOCOLOS } from "@/lib/skinfold";
 import { parseMeals } from "@/lib/mealplan";
-import { formatDate, formatDateTime } from "@/lib/datetime";
+import { formatDate, formatDateTime, daysSince } from "@/lib/datetime";
 import { formatCents } from "@/lib/money";
 import { mealIcon } from "@/lib/food-icons";
 import { Icon } from "@/lib/icons";
+import { lembreteConsulta, retomarContato, saudacao } from "@/lib/whatsapp";
+import { WaButton } from "@/app/wa-button";
 import { LineChart, type ChartSeries } from "./line-chart";
 import { EnergyPanel } from "./energy-panel";
 import { Timeline } from "./timeline";
 import { StatusControl } from "./status-control";
+import { Privacidade } from "./privacidade";
+import { SkinfoldForm } from "./skinfold-form";
 
 // Cores da paleta validada (script do guia de dataviz — CVD e contraste ok
 // sobre o card #fdfdfa): série 1 verde-oliva, série 2 caramelo.
@@ -42,8 +47,15 @@ function age(birthDate: Date | null): string {
   return `${Math.floor(diff / (365.25 * 24 * 3600 * 1000))} anos`;
 }
 
-export default async function PatientPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PatientPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ erro?: string }>;
+}) {
   const { id } = await params;
+  const { erro } = await searchParams;
 
   const nutritionist = await getCurrentNutritionist();
 
@@ -63,6 +75,19 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
   if (!patient) notFound();
 
   const proximas = patient.appointments.filter((a) => a.scheduledAt >= new Date());
+
+  // A mensagem do botão de WhatsApp muda conforme a situação do paciente —
+  // lembrar de uma consulta marcada e chamar de volta quem sumiu são conversas
+  // diferentes, e escolher errado obrigaria a apagar tudo e reescrever.
+  const proximaConsulta = proximas[proximas.length - 1]; // a mais próxima (lista vem decrescente)
+  const ultimaRealizada = patient.appointments.find((a) => a.status === "realizada");
+  const diasSemVir = ultimaRealizada ? daysSince(ultimaRealizada.scheduledAt) : null;
+
+  const mensagemWhats = proximaConsulta
+    ? lembreteConsulta(patient.name, nutritionist.name, proximaConsulta.scheduledAt)
+    : diasSemVir != null && diasSemVir >= 45
+      ? retomarContato(patient.name, nutritionist.name, diasSemVir)
+      : saudacao(patient.name, nutritionist.name);
 
   const latest = patient.measurements[0];
   const bmi =
@@ -92,6 +117,7 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <StatusControl patientId={patient.id} status={patient.status} />
+          <WaButton phone={patient.phone} message={mensagemWhats} />
           <Link className="btn secondary" href="/pacientes">
             <Icon name="back" size={15} /> Voltar
           </Link>
@@ -234,7 +260,17 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
                   <td>{formatDate(m.date)}</td>
                   <td>{m.weightKg ? `${m.weightKg} kg` : "—"}</td>
                   <td>{m.heightCm ? `${m.heightCm} cm` : "—"}</td>
-                  <td>{m.bodyFatPct ? `${m.bodyFatPct}%` : "—"}</td>
+                  <td>
+                    {m.bodyFatPct ? `${m.bodyFatPct}%` : "—"}
+                    {/* O protocolo importa: comparar um Pollock com um Faulkner
+                        é comparar dois métodos diferentes, não uma evolução. */}
+                    {m.skinfoldProtocol && (
+                      <div className="muted" style={{ fontSize: 11.5 }}>
+                        {PROTOCOLOS.find((p) => p.id === m.skinfoldProtocol)?.label ??
+                          m.skinfoldProtocol}
+                      </div>
+                    )}
+                  </td>
                   <td>{m.waistCm ? `${m.waistCm} cm` : "—"}</td>
                   <td>{m.hipCm ? `${m.hipCm} cm` : "—"}</td>
                 </tr>
@@ -242,6 +278,22 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
             </tbody>
           </table>
         )}
+      </div>
+
+      <div className="panel no-print">
+        <h2 className="section-title">
+          <Icon name="ruler" size={17} /> Dobras cutâneas
+        </h2>
+        <p className="muted" style={{ marginTop: -10, fontSize: 13.5 }}>
+          Meça com o adipômetro e o percentual de gordura sai calculado. Registrar aqui
+          preenche a mesma avaliação do dia — não cria uma linha nova no histórico.
+        </p>
+        <SkinfoldForm
+          patientId={patient.id}
+          sex={patient.sex}
+          birthDate={patient.birthDate ? patient.birthDate.toISOString() : null}
+          action={addSkinfold}
+        />
       </div>
 
       <div className="panel">
@@ -396,6 +448,12 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
         measurements={patient.measurements}
         mealPlans={patient.mealPlans}
         notes={patient.notes}
+      />
+
+      <Privacidade
+        patientId={patient.id}
+        patientName={patient.name}
+        erro={erro === "confirmacao"}
       />
     </>
   );

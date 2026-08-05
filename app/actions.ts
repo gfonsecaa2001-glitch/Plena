@@ -9,7 +9,13 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
 import { parseMeals, serializeMeals } from "@/lib/mealplan";
-import { parseDateInput, parseDateTimeInput } from "@/lib/datetime";
+import { parseDateInput, parseDateTimeInput, todayISO, dayRange } from "@/lib/datetime";
+import {
+  bodyFatFromSkinfolds,
+  idadeEm,
+  PROTOCOLOS,
+  type Protocolo,
+} from "@/lib/skinfold";
 import { pushEvent, updateEvent, deleteEvent } from "@/lib/google-calendar";
 import { slugify } from "@/lib/booking";
 import { parseMoneyToCents } from "@/lib/money";
@@ -82,6 +88,66 @@ export async function addMeasurement(formData: FormData) {
       notes: optional(formData.get("notes")),
     },
   });
+
+  revalidatePath(`/pacientes/${patientId}`);
+}
+
+// Dobras cutâneas: grava as medidas e o % de gordura que elas produzem.
+//
+// O cálculo é refeito NO SERVIDOR, mesmo o formulário já mostrando a prévia na
+// tela. O que vem do navegador é digitável por qualquer um — e este número vai
+// para um prontuário.
+export async function addSkinfold(formData: FormData) {
+  const patientId = formData.get("patientId")!.toString();
+  const patient = await requireOwnPatient(patientId);
+  if (!patient) return;
+
+  const dataTexto = optional(formData.get("date")) ?? todayISO();
+  const data = parseDateInput(dataTexto);
+
+  const dobras = {
+    tricepsMm: optionalNumber(formData.get("tricepsMm")),
+    subscapularMm: optionalNumber(formData.get("subscapularMm")),
+    suprailiacMm: optionalNumber(formData.get("suprailiacMm")),
+    abdominalMm: optionalNumber(formData.get("abdominalMm")),
+    thighMm: optionalNumber(formData.get("thighMm")),
+    chestMm: optionalNumber(formData.get("chestMm")),
+    midaxillaryMm: optionalNumber(formData.get("midaxillaryMm")),
+  };
+
+  const protocoloTexto = formData.get("protocolo")?.toString() ?? "";
+  if (!PROTOCOLOS.some((p) => p.id === protocoloTexto)) return;
+  const protocolo = protocoloTexto as Protocolo;
+
+  const pct = bodyFatFromSkinfolds(
+    protocolo,
+    dobras,
+    patient.sex,
+    idadeEm(patient.birthDate, data)
+  );
+  if (pct === null) return; // faltou dobra ou o resultado não é plausível
+
+  const peso = optionalNumber(formData.get("weightKg"));
+
+  // Uma avaliação por dia: se já existe uma medição nessa data, as dobras
+  // entram nela em vez de criar uma linha duplicada no histórico.
+  const { start, end } = dayRange(dataTexto);
+  const existente = await prisma.measurement.findFirst({
+    where: { patientId, date: { gte: start, lt: end } },
+  });
+
+  const dados = {
+    ...dobras,
+    skinfoldProtocol: protocolo,
+    bodyFatPct: pct,
+    ...(peso && peso > 0 ? { weightKg: peso } : {}),
+  };
+
+  if (existente) {
+    await prisma.measurement.update({ where: { id: existente.id }, data: dados });
+  } else {
+    await prisma.measurement.create({ data: { patientId, date: data, ...dados } });
+  }
 
   revalidatePath(`/pacientes/${patientId}`);
 }
@@ -343,6 +409,69 @@ export async function saveDefaultPrice(formData: FormData) {
   });
 
   revalidatePath("/financeiro");
+}
+
+// ---------- LGPD: direito à exclusão ----------
+
+// Apaga o paciente e TUDO ligado a ele (LGPD, art. 18, VI).
+//
+// Duas travas propositais, porque isso não tem volta:
+//   1. o nutricionista precisa digitar o nome do paciente igualzinho;
+//   2. confirmamos que o paciente é dele antes de qualquer coisa.
+//
+// As demais tabelas somem junto por cascata (definida no schema); os eventos
+// no Google Agenda são apagados na melhor das intenções — se o Google estiver
+// fora do ar, a exclusão no Plena acontece do mesmo jeito, porque o direito do
+// titular não pode depender de um serviço de terceiro.
+export async function deletePatient(formData: FormData) {
+  const patientId = formData.get("patientId")!.toString();
+  const patient = await requireOwnPatient(patientId);
+  if (!patient) return;
+
+  const confirmacao = formData.get("confirmacao")?.toString().trim() ?? "";
+  if (confirmacao.toLowerCase() !== patient.name.trim().toLowerCase()) {
+    redirect(`/pacientes/${patientId}?erro=confirmacao`);
+  }
+
+  const nutritionist = await getCurrentNutritionist();
+  const comEvento = await prisma.appointment.findMany({
+    where: { patientId, googleEventId: { not: null } },
+    select: { googleEventId: true },
+  });
+  for (const a of comEvento) {
+    await deleteEvent(nutritionist.id, a.googleEventId!);
+  }
+
+  await prisma.patient.delete({ where: { id: patientId } });
+
+  revalidatePath("/pacientes");
+  revalidatePath("/agenda");
+  revalidatePath("/financeiro");
+  revalidatePath("/");
+  redirect("/pacientes?excluido=1");
+}
+
+// ---------- Perfil profissional ----------
+
+// Esses dados vão impressos no plano que o paciente leva para casa. O CRN é o
+// que transforma a folha em um documento com autoria — por isso o campo existe.
+export async function saveProfile(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+  const name = optional(formData.get("name"), 120);
+
+  await prisma.nutritionist.update({
+    where: { id: nutritionist.id },
+    data: {
+      ...(name ? { name } : {}), // o nome nunca pode ficar vazio
+      crn: optional(formData.get("crn"), 40),
+      phone: optional(formData.get("phone"), 40),
+      city: optional(formData.get("city"), 80),
+      clinic: optional(formData.get("clinic"), 120),
+    },
+  });
+
+  revalidatePath("/perfil");
+  revalidatePath("/");
 }
 
 // ---------- Alimentos próprios e receitas ----------

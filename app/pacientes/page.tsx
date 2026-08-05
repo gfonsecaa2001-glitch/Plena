@@ -25,9 +25,9 @@ const FILTROS = [
 export default async function PatientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; excluido?: string }>;
 }) {
-  const { q, status } = await searchParams;
+  const { q, status, excluido } = await searchParams;
   const nutritionist = await getCurrentNutritionist();
 
   // Padrão é mostrar só quem está em acompanhamento — é a lista de trabalho.
@@ -64,6 +64,12 @@ export default async function PatientsPage({
 
   return (
     <>
+      {excluido && (
+        <p className="auth-error success">
+          ✓ Paciente excluído. Todos os dados dele foram apagados definitivamente.
+        </p>
+      )}
+
       <div className="page-header">
         <div className="title-with-icon">
           <span className="page-emoji">👥</span>

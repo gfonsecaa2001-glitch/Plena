@@ -359,6 +359,17 @@ h1, h2, h3, .stat, .logo, .auth-logo, .auth-brand h2 {
 .btn.danger { color: #a03d22; border-color: #ecd4c8; }
 .btn.danger:hover { background: #f9efe9; }
 
+/* WhatsApp: verde da própria marca, porque o usuário procura essa cor.
+   Fica discreto (fundo claro) para não competir com a ação principal da tela. */
+.btn.whatsapp {
+  background: #e8f6ec;
+  color: #10692f;
+  border: 1px solid #bfe3ca;
+  box-shadow: 0 1px 2px rgba(16, 105, 47, 0.08);
+  text-decoration: none;
+}
+.btn.whatsapp:hover { background: #d9efe0; filter: none; }
+
 /* ===== Cards de indicadores ===== */
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 26px; }
 .card {
@@ -1576,8 +1587,85 @@ th svg { vertical-align: -2px; margin-right: 5px; opacity: 0.7; }
 }
 
 /* ===== Impressão ===== */
+/* ===== Dobras cutâneas ===== */
+.protocol-picker { display: flex; gap: 10px; flex-wrap: wrap; }
+.protocol-chip {
+  flex: 1;
+  min-width: 190px;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.12s, background 0.12s;
+}
+.protocol-chip strong { display: block; font-size: 13.5px; color: var(--ink); }
+.protocol-chip span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.protocol-chip:hover { background: var(--accent-soft); }
+.protocol-chip.active { border-color: var(--accent); background: var(--accent-soft); }
+.protocol-chip.active strong { color: var(--accent); }
+
+.skinfold-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+.skinfold-result {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4px 14px;
+  border-left: 3px solid var(--accent);
+  min-height: 40px;
+}
+.skinfold-result strong { font-size: 22px; color: var(--accent); line-height: 1.1; }
+.skinfold-result span { font-size: 12px; color: var(--muted); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* Área de exclusão definitiva — visualmente separada do resto para que
+   ninguém clique aqui achando que é mais um formulário do dia a dia. */
+.danger-zone {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid #eed6ca;
+  border-radius: 12px;
+  background: #fdf6f2;
+}
+.danger-zone p { margin: 0 0 4px; font-size: 13.5px; color: #6b3b28; }
+
+/* Cabeçalho e rodapé de marca do plano impresso.
+   Só existem no papel — na tela o nutricionista já sabe quem é. */
+.print-only { display: none; }
+
 @media print {
   .sidebar, .no-print { display: none !important; }
+  .print-only { display: block; }
+
+  .print-brand {
+    border-bottom: 2px solid #4a6b35;
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+  }
+  .print-brand h1 { font-size: 19px; margin: 0; color: #3b5729; }
+  .print-brand .print-crn { font-size: 12px; color: #444; margin: 3px 0 0; }
+  .print-brand .print-contact { font-size: 11px; color: #666; margin: 2px 0 0; }
+  .print-for {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    margin-top: 8px;
+    color: #222;
+  }
+  .print-footer {
+    margin-top: 22px;
+    padding-top: 8px;
+    border-top: 1px solid #ddd;
+    font-size: 10.5px;
+    color: #777;
+    text-align: center;
+  }
   .main { padding: 0; max-width: 100%; }
   body { background: #fff; }
   .panel { border: none; border-bottom: 1px solid #ddd; border-radius: 0; page-break-inside: avoid; box-shadow: none; }

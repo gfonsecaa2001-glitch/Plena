@@ -41,6 +41,13 @@ model Nutritionist {
 
   // Valor padrão da consulta, em centavos — só para preencher o formulário.
   defaultPriceCents Int?
+
+  // Identificação profissional. Vai impressa no plano que o paciente leva
+  // para casa: sem o CRN, o documento não identifica quem prescreveu.
+  crn      String? // ex.: "CRN-3 12345"
+  phone    String? // telefone de contato do consultório
+  city     String? // cidade/UF, para o rodapé do plano
+  clinic   String? // nome do consultório ou da marca, se houver
 }
 
 // Cobrança: uma consulta, um pacote ou qualquer serviço a receber.
@@ -130,6 +137,23 @@ model Measurement {
   waistCm    Float?
   hipCm      Float?
   notes      String?
+
+  // Dobras cutâneas, em MILÍMETROS. São sete porque é o conjunto que os
+  // protocolos usados no Brasil pedem — Pollock de 7, Pollock de 3 (um
+  // subconjunto, diferente para homens e mulheres) e Faulkner de 4.
+  // Ficam nulas quando o nutricionista não usa adipômetro.
+  tricepsMm     Float?
+  subscapularMm Float?
+  suprailiacMm  Float?
+  abdominalMm   Float?
+  thighMm       Float?
+  chestMm       Float?
+  midaxillaryMm Float?
+
+  // Qual protocolo gerou o % de gordura calculado (pollock7 | pollock3 | faulkner).
+  // Guardado junto porque comparar avaliações feitas por protocolos
+  // diferentes é comparar coisas diferentes.
+  skinfoldProtocol String?
 }
 
 model Appointment {
