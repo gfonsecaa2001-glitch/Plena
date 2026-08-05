@@ -20,6 +20,7 @@ import { pushEvent, updateEvent, deleteEvent } from "@/lib/google-calendar";
 import { slugify } from "@/lib/booking";
 import { parseMoneyToCents } from "@/lib/money";
 import { generateShareToken, defaultExpiry } from "@/lib/share";
+import { lerPlanilha, chavesDuplicidade, jaVisto } from "@/lib/csv";
 
 function optional(value: FormDataEntryValue | null, max = 5000): string | null {
   const s = value?.toString().trim().slice(0, max);
@@ -70,6 +71,60 @@ export async function createPatient(formData: FormData) {
   });
 
   redirect(`/pacientes/${patient.id}`);
+}
+
+// Importa pacientes de uma planilha.
+//
+// O servidor recebe o TEXTO ORIGINAL e refaz a leitura com a mesma função que
+// gerou a prévia — nunca a lista já processada pelo navegador. Assim o que foi
+// aprovado na tela é exatamente o que entra no banco, e um formulário forjado
+// não injeta pacientes com campos arbitrários.
+export async function importPatients(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+  const texto = formData.get("planilha")?.toString() ?? "";
+  if (!texto.trim()) return;
+
+  const { pacientes } = lerPlanilha(texto);
+  if (pacientes.length === 0) return;
+
+  // Teto por importação: protege contra colar um arquivo gigante por engano.
+  const lote = pacientes.slice(0, 500);
+
+  // Quem já está cadastrado nesta conta não entra de novo. A comparação usa
+  // nome + telefone + e-mail porque homônimo existe, e cadastrar a pessoa
+  // duas vezes espalha o histórico dela em duas fichas.
+  const existentes = await prisma.patient.findMany({
+    where: { nutritionistId: nutritionist.id },
+    select: { name: true, phone: true, email: true },
+  });
+  const vistos = new Set<string>();
+  for (const p of existentes) {
+    jaVisto(vistos, chavesDuplicidade(p.name, p.phone, p.email));
+  }
+
+  const novos = [];
+  for (const p of lote) {
+    if (jaVisto(vistos, chavesDuplicidade(p.name, p.phone, p.email))) continue;
+    novos.push({
+      nutritionistId: nutritionist.id,
+      name: p.name,
+      email: p.email,
+      phone: p.phone,
+      birthDate: p.birthDate,
+      sex: p.sex,
+      goal: p.goal,
+      restrictions: p.restrictions,
+      anamnesis: p.anamnesis,
+    });
+  }
+
+  if (novos.length > 0) {
+    await prisma.patient.createMany({ data: novos });
+  }
+
+  revalidatePath("/pacientes");
+  revalidatePath("/");
+  redirect(`/pacientes?importados=${novos.length}&repetidos=${lote.length - novos.length}`);
 }
 
 export async function addMeasurement(formData: FormData) {

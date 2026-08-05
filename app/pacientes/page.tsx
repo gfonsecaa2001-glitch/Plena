@@ -25,9 +25,15 @@ const FILTROS = [
 export default async function PatientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; excluido?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    status?: string;
+    excluido?: string;
+    importados?: string;
+    repetidos?: string;
+  }>;
 }) {
-  const { q, status, excluido } = await searchParams;
+  const { q, status, excluido, importados, repetidos } = await searchParams;
   const nutritionist = await getCurrentNutritionist();
 
   // Padrão é mostrar só quem está em acompanhamento — é a lista de trabalho.
@@ -70,6 +76,25 @@ export default async function PatientsPage({
         </p>
       )}
 
+      {importados &&
+        (() => {
+          const novos = Number(importados);
+          const pulados = Number(repetidos);
+          return (
+            <p className="auth-error success">
+              ✓{" "}
+              {novos === 0
+                ? "Nenhum paciente novo"
+                : `${novos} paciente${novos === 1 ? "" : "s"} importado${novos === 1 ? "" : "s"}`}
+              .
+              {pulados > 0 &&
+                (pulados === 1
+                  ? " 1 já estava cadastrado e foi pulado."
+                  : ` ${pulados} já estavam cadastrados e foram pulados.`)}
+            </p>
+          );
+        })()}
+
       <div className="page-header">
         <div className="title-with-icon">
           <span className="page-emoji">👥</span>
@@ -82,9 +107,14 @@ export default async function PatientsPage({
             </p>
           </div>
         </div>
-        <Link className="btn" href="/pacientes/novo">
-          <Icon name="plus" size={15} /> Novo paciente
-        </Link>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Link className="btn secondary" href="/pacientes/importar">
+            <Icon name="export" size={15} /> Importar planilha
+          </Link>
+          <Link className="btn" href="/pacientes/novo">
+            <Icon name="plus" size={15} /> Novo paciente
+          </Link>
+        </div>
       </div>
 
       <div className="list-controls">
