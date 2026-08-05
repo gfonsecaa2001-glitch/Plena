@@ -85,7 +85,21 @@ model Patient {
   birthDate      DateTime?
   sex            String? // "F" | "M" | "Outro"
   goal           String? // objetivo: emagrecimento, hipertrofia, saúde...
-  anamnesis      String? // histórico clínico / anamnese em texto livre
+  anamnesis      String? // observações livres — o que não cabe nos campos abaixo
+
+  // Anamnese estruturada.
+  //
+  // Antes disso tudo virava um parágrafo de texto livre que ninguém relê no
+  // meio da consulta. Separado em campos, o dado fica consultável — e
+  // `restrictions` em especial passa a ser cruzado com os alimentos do plano,
+  // avisando quando o plano contraria uma alergia.
+  restrictions  String? // alergias, intolerâncias e restrições, separadas por vírgula
+  conditions    String? // condições de saúde (diabetes, hipertensão, tireoide…)
+  medications   String? // medicamentos e suplementos em uso
+  bowelHabit    String? // hábito intestinal
+  sleepHours    Float? // horas de sono por noite
+  waterLiters   Float? // litros de água por dia
+  familyHistory String? // histórico familiar relevante
 
   // Situação no acompanhamento. Sem isso, quem parou de vir há um ano
   // continua poluindo a lista e os alertas de "sem retorno".

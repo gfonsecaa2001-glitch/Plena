@@ -49,8 +49,17 @@ export async function GET(
       dataNascimento: patient.birthDate,
       sexo: patient.sex,
       objetivo: patient.goal,
-      anamnese: patient.anamnesis,
       situacao: patient.status,
+      anamnese: {
+        restricoes: patient.restrictions,
+        condicoesDeSaude: patient.conditions,
+        medicamentos: patient.medications,
+        habitoIntestinal: patient.bowelHabit,
+        sonoHorasPorNoite: patient.sleepHours,
+        aguaLitrosPorDia: patient.waterLiters,
+        historicoFamiliar: patient.familyHistory,
+        observacoes: patient.anamnesis,
+      },
       cadastradoEm: patient.createdAt,
       metas: {
         nivelAtividade: patient.activityLevel,

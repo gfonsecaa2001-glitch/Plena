@@ -17,6 +17,7 @@ import { Timeline } from "./timeline";
 import { StatusControl } from "./status-control";
 import { Privacidade } from "./privacidade";
 import { SkinfoldForm } from "./skinfold-form";
+import { Anamnese } from "./anamnese";
 
 // Cores da paleta validada (script do guia de dataviz — CVD e contraste ok
 // sobre o card #fdfdfa): série 1 verde-oliva, série 2 caramelo.
@@ -168,14 +169,7 @@ export default async function PatientPage({
         heightCm={latest?.heightCm ?? null}
       />
 
-      {patient.anamnesis && (
-        <div className="panel">
-          <h2 className="section-title">
-            <Icon name="clipboard" size={17} /> Anamnese
-          </h2>
-          <p style={{ whiteSpace: "pre-wrap", margin: 0, fontSize: 14 }}>{patient.anamnesis}</p>
-        </div>
-      )}
+      <Anamnese patient={patient} />
 
       {(() => {
         const weight = buildSeries(patient.measurements, "weightKg", "Peso", SERIES_COLORS[0]);

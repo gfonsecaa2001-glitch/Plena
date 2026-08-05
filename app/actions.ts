@@ -736,6 +736,35 @@ export async function setPatientStatus(formData: FormData) {
   revalidatePath("/");
 }
 
+// Anamnese estruturada. Fica separada do cadastro básico porque é preenchida
+// aos poucos, ao longo do acompanhamento — não na hora de criar o paciente.
+export async function saveAnamnesis(formData: FormData) {
+  const patientId = formData.get("patientId")!.toString();
+  if (!(await requireOwnPatient(patientId))) return;
+
+  await prisma.patient.update({
+    where: { id: patientId },
+    data: {
+      restrictions: optional(formData.get("restrictions"), 500),
+      conditions: optional(formData.get("conditions"), 500),
+      medications: optional(formData.get("medications"), 500),
+      bowelHabit: optional(formData.get("bowelHabit"), 100),
+      familyHistory: optional(formData.get("familyHistory"), 500),
+      anamnesis: optional(formData.get("anamnesis"), 5000),
+      sleepHours: clampFaixa(optionalNumber(formData.get("sleepHours")), 0, 24),
+      waterLiters: clampFaixa(optionalNumber(formData.get("waterLiters")), 0, 15),
+    },
+  });
+
+  revalidatePath(`/pacientes/${patientId}`);
+}
+
+// Valor fora da faixa possível é erro de digitação, não dado — vira nulo.
+function clampFaixa(v: number | null, min: number, max: number): number | null {
+  if (v === null || v < min || v > max) return null;
+  return Math.round(v * 10) / 10;
+}
+
 // Metas energéticas do paciente — decisão clínica, então tudo é editável.
 export async function saveEnergyTargets(formData: FormData) {
   const patientId = formData.get("patientId")!.toString();

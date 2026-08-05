@@ -473,6 +473,8 @@ form.stack { display: flex; flex-direction: column; gap: 13px; max-width: 520px;
   box-shadow: 0 0 0 3px rgba(74, 107, 53, 0.14);
 }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.field-hint { font-size: 12px; color: var(--muted); margin-top: 4px; display: block; }
 .inline-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
 .inline-form .field { min-width: 90px; }
 .inline-form .field input { padding: 7px 9px; font-size: 13px; }
@@ -1577,6 +1579,7 @@ th svg { vertical-align: -2px; margin-right: 5px; opacity: 0.7; }
   .main { padding: 20px 16px; }
   .page-header { flex-wrap: wrap; gap: 10px; }
   .grid-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
   .dash-grid { grid-template-columns: 1fr; }
   .plan-grid { grid-template-columns: 1fr; }
   .page-emoji, .avatar.big { width: 42px; height: 42px; font-size: 21px; border-radius: 12px; }
@@ -1633,6 +1636,66 @@ th svg { vertical-align: -2px; margin-right: 5px; opacity: 0.7; }
 
 @media (max-width: 560px) {
   .public-plan-head { flex-direction: column; }
+}
+
+/* ===== Restrições e alertas alimentares ===== */
+.restricoes-resumo {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: #fdf6f2;
+  border: 1px solid #eed6ca;
+  border-radius: 12px;
+  padding: 11px 14px;
+  margin-bottom: 14px;
+  color: #6b3b28;
+  font-size: 13.5px;
+}
+.restricoes-resumo svg { flex-shrink: 0; margin-top: 2px; }
+
+.tag-restricao {
+  display: inline-flex;
+  align-items: center;
+  background: #f6e2d8;
+  border: 1px solid #e7c9b9;
+  border-radius: 999px;
+  padding: 1px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 5px;
+}
+
+/* Aviso no topo do plano: some na impressão, porque o papel é do paciente e
+   ele não precisa ver o alerta operacional do nutricionista. */
+.alerta-plano {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  background: #fdf3ee;
+  border: 1px solid #e9c9b6;
+  border-left: 4px solid #c2653a;
+  border-radius: 12px;
+  padding: 13px 16px;
+  margin-bottom: 20px;
+  color: #6b3b28;
+}
+.alerta-plano h3 { margin: 0 0 5px; font-size: 14.5px; }
+.alerta-plano ul { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; }
+.alerta-plano li { margin-bottom: 2px; }
+.alerta-plano .ressalva { font-size: 12px; margin: 8px 0 0; opacity: 0.85; }
+
+/* Marca no item que conflita, dentro da lista da refeição. */
+.item-alerta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #f6e2d8;
+  color: #a03d22;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-left: 8px;
 }
 
 /* Renomear modelo direto na tabela — sem abrir outra tela para trocar

@@ -18,6 +18,7 @@ import {
 } from "@/app/actions";
 import { planoPronto, whatsappLink } from "@/lib/whatsapp";
 import { isShareActive, shareUrl, siteUrl } from "@/lib/share";
+import { detectarConflitos, conflitosDoAlimento } from "@/lib/food-alert";
 import { WaButton } from "@/app/wa-button";
 import { PrintButton } from "./print-button";
 import { SharePanel } from "./share-panel";
@@ -97,6 +98,15 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
   const link = linkAtivo ? shareUrl(plan.shareToken!, siteUrl()) : null;
   const mensagemPlano = planoPronto(p.name, nutritionist.name, plan.title, link);
 
+  // Cruza as restrições do paciente com o que está no plano.
+  //
+  // Usa o NOME do alimento da tabela quando existe (é o texto confiável) e cai
+  // no texto digitado quando o item foi escrito à mão.
+  const textosDosItens = meals.flatMap((m) =>
+    m.items.map((i) => (i.foodId ? (foodById.get(i.foodId)?.name ?? i.text) : i.text))
+  );
+  const conflitos = detectarConflitos(p.restrictions, textosDosItens);
+
   // Destinos possíveis para uma cópia: os outros pacientes desta conta.
   const outrosPacientes = await prisma.patient.findMany({
     where: { nutritionistId: nutritionist.id, id: { not: plan.patientId }, status: "ativo" },
@@ -151,6 +161,33 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
           </Link>
         </div>
       </div>
+
+      {/* Conflito entre o plano e as restrições do paciente.
+          Fora da impressão: o papel é do paciente, e este aviso é operacional
+          — quem precisa vê-lo é o nutricionista, na tela, antes de imprimir. */}
+      {conflitos.length > 0 && (
+        <div className="alerta-plano no-print">
+          <Icon name="alert" size={20} />
+          <div>
+            <h3>
+              Este plano contraria {conflitos.length === 1 ? "uma restrição" : "restrições"} de{" "}
+              {p.name.split(" ")[0]}
+            </h3>
+            <ul>
+              {conflitos.map((c, i) => (
+                <li key={i}>
+                  <strong>{c.alimento}</strong> — restrição anotada: {c.restricao}
+                </li>
+              ))}
+            </ul>
+            <p className="ressalva">
+              Conferência automática pelo nome do alimento. Ela não enxerga ingrediente
+              dentro de preparação nem contaminação cruzada — e não substitui a sua
+              leitura. Se a prescrição é intencional, siga em frente.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Resumo nutricional do dia */}
       {dayTotal.kcal > 0 && (
@@ -254,11 +291,25 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
                 {meal.items.map((item, itemIndex) => {
                   const m = macrosOf(item);
                   const r = m ? roundMacros(m) : null;
+                  const nomeReal = item.foodId
+                    ? (foodById.get(item.foodId)?.name ?? item.text)
+                    : item.text;
+                  const restricoesFeridas = conflitosDoAlimento(p.restrictions, nomeReal);
                   return (
                     <li key={itemIndex} className="meal-item">
                       <div className="meal-item-main">
                         <span className="food-emoji">{foodIcon(item.text)}</span>
-                        <span className="food-text">{item.text}</span>
+                        <span className="food-text">
+                          {item.text}
+                          {restricoesFeridas.length > 0 && (
+                            <span
+                              className="item-alerta no-print"
+                              title={`Contraria: ${restricoesFeridas.join(", ")}`}
+                            >
+                              <Icon name="alert" size={11} /> {restricoesFeridas.join(", ")}
+                            </span>
+                          )}
+                        </span>
                         {r ? (
                           <span className="food-macros">
                             <b>{r.kcal} kcal</b>
