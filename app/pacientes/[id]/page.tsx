@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
 import { addMeasurement, addAppointment, createMealPlan, addSkinfold } from "@/app/actions";
 import { PROTOCOLOS } from "@/lib/skinfold";
+import { proximaAgendada } from "@/lib/agenda";
 import { parseMeals } from "@/lib/mealplan";
 import { formatDate, formatDateTime, daysSince } from "@/lib/datetime";
 import { formatCents } from "@/lib/money";
@@ -82,12 +83,16 @@ export default async function PatientPage({
     select: { id: true, title: true },
   });
 
-  const proximas = patient.appointments.filter((a) => a.scheduledAt >= new Date());
+  // Só o que continua agendado: consulta cancelada segue no prontuário, mas
+  // não é compromisso — e não pode virar a data de um lembrete.
+  const proximas = patient.appointments
+    .filter((a) => a.status === "agendada" && a.scheduledAt >= new Date())
+    .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
 
   // A mensagem do botão de WhatsApp muda conforme a situação do paciente —
   // lembrar de uma consulta marcada e chamar de volta quem sumiu são conversas
   // diferentes, e escolher errado obrigaria a apagar tudo e reescrever.
-  const proximaConsulta = proximas[proximas.length - 1]; // a mais próxima (lista vem decrescente)
+  const proximaConsulta = proximaAgendada(patient.appointments, new Date());
   const ultimaRealizada = patient.appointments.find((a) => a.status === "realizada");
   const diasSemVir = ultimaRealizada ? daysSince(ultimaRealizada.scheduledAt) : null;
 

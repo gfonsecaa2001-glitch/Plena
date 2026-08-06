@@ -458,7 +458,13 @@ export async function addMealItem(formData: FormData) {
   // Caminho 1: escolheu um alimento da tabela → o texto é montado a partir
   // dele, e guardamos o vínculo para poder recalcular os macros depois.
   if (foodId) {
-    const food = await prisma.food.findUnique({ where: { id: foodId } });
+    // O id vem do formulário e não é confiável. Sem este filtro, um id forjado
+    // traz a receita PRIVADA de outro nutricionista para dentro do plano —
+    // com nome e macros. Mesma regra já aplicada em addSubstitution.
+    const nutritionist = await getCurrentNutritionist();
+    const food = await prisma.food.findFirst({
+      where: { id: foodId, OR: [{ nutritionistId: null }, { nutritionistId: nutritionist.id }] },
+    });
     if (!food) return;
     const grams = gramsRaw && gramsRaw > 0 ? Math.min(gramsRaw, 5000) : 100;
     await updateMeals(planId, (meals) => {

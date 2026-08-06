@@ -31,7 +31,7 @@ async function carregarPlano(token: string) {
         select: {
           name: true,
           kcalTarget: true,
-          nutritionist: { select: { name: true, crn: true, phone: true, clinic: true } },
+          nutritionist: { select: { id: true, name: true, crn: true, phone: true, clinic: true } },
         },
       },
     },
@@ -59,8 +59,14 @@ export default async function PlanoPublicoPage({
   const foodIds = [
     ...new Set(meals.flatMap((m) => m.items.map((i) => i.foodId).filter(Boolean))),
   ] as string[];
+  // Só a TACO e os alimentos do próprio nutricionista que prescreveu.
   const foods = foodIds.length
-    ? await prisma.food.findMany({ where: { id: { in: foodIds } } })
+    ? await prisma.food.findMany({
+        where: {
+          id: { in: foodIds },
+          OR: [{ nutritionistId: null }, { nutritionistId: nutri.id }],
+        },
+      })
     : [];
   const foodById = new Map(foods.map((f) => [f.id, f]));
 

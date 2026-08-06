@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
 import { formatCents, centsToInput, labelMetodo, METODOS } from "@/lib/money";
 import { formatDate, currentMonth, todayISO } from "@/lib/datetime";
+import { estaVencida, inicioDeHoje } from "@/lib/charges";
 import { Icon } from "@/lib/icons";
 import { createCharge, setChargeStatus, deleteCharge, saveDefaultPrice } from "@/app/actions";
 import { cobrancaPendente } from "@/lib/whatsapp";
@@ -34,7 +35,9 @@ export default async function FinancePage({
   const nutritionist = await getCurrentNutritionist();
   const filtro = FILTROS.some((f) => f.value === status) ? status! : "pendente";
   const { start: inicioDoMes } = currentMonth();
-  const hoje = new Date(`${todayISO()}T23:59:59-03:00`);
+  const hoje = todayISO();
+  // Vencida é quem venceu ANTES de hoje. Quem vence hoje ainda está no prazo.
+  const limiteVencidas = inicioDeHoje(hoje);
 
   const [cobrancas, pacientes, recebidoMes, emAberto, vencidas] = await Promise.all([
     prisma.charge.findMany({
@@ -64,7 +67,7 @@ export default async function FinancePage({
       where: {
         nutritionistId: nutritionist.id,
         status: "pendente",
-        dueDate: { lt: hoje },
+        dueDate: { lt: limiteVencidas },
       },
     }),
   ]);
@@ -223,8 +226,7 @@ export default async function FinancePage({
             </thead>
             <tbody>
               {cobrancas.map((c) => {
-                const vencida =
-                  c.status === "pendente" && c.dueDate != null && c.dueDate < hoje;
+                const vencida = c.status === "pendente" && estaVencida(c.dueDate, hoje);
                 return (
                   <tr key={c.id}>
                     <td>

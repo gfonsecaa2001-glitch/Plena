@@ -5,6 +5,7 @@ import { formatDate, formatDateTime, relativeDays, daysSince, todayISO } from "@
 import { formatCents } from "@/lib/money";
 import { Icon } from "@/lib/icons";
 import { retomarContato, cobrancaPendente, lembreteConsulta } from "@/lib/whatsapp";
+import { inicioDeHoje } from "@/lib/charges";
 import { WaButton } from "@/app/wa-button";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +28,8 @@ function initials(name: string) {
 export default async function AlertasPage() {
   const nutritionist = await getCurrentNutritionist();
   const agora = new Date();
-  const fimDeHoje = new Date(`${todayISO()}T23:59:59-03:00`);
+  // Vencida é quem venceu ANTES de hoje — quem vence hoje ainda está no prazo.
+  const limiteVencidas = inicioDeHoje(todayISO());
   const proximosSeteDias = new Date(agora.getTime() + 7 * 86400000);
 
   const [ativos, consultasSemEvolucao, vencidas, proximas] = await Promise.all([
@@ -69,7 +71,7 @@ export default async function AlertasPage() {
       where: {
         nutritionistId: nutritionist.id,
         status: "pendente",
-        dueDate: { lt: fimDeHoje },
+        dueDate: { lt: limiteVencidas },
       },
       orderBy: { dueDate: "asc" },
       include: { patient: { select: { id: true, name: true, phone: true } } },

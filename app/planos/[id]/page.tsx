@@ -67,8 +67,16 @@ export default async function MealPlanPage({ params }: { params: Promise<{ id: s
 
   // Carrega de uma vez só os alimentos citados no plano, para calcular macros.
   const foodIds = [...new Set(meals.flatMap((m) => m.items.map((i) => i.foodId).filter(Boolean)))] as string[];
+  // Mesmo filtro de dono aqui: se um id alheio tiver entrado no plano por
+  // qualquer caminho, ele simplesmente não resolve — o item aparece sem
+  // cálculo em vez de exibir os macros da receita de outra conta.
   const foods = foodIds.length
-    ? await prisma.food.findMany({ where: { id: { in: foodIds } } })
+    ? await prisma.food.findMany({
+        where: {
+          id: { in: foodIds },
+          OR: [{ nutritionistId: null }, { nutritionistId: nutritionist.id }],
+        },
+      })
     : [];
   const foodById = new Map(foods.map((f) => [f.id, f]));
 

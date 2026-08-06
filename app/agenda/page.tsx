@@ -6,6 +6,7 @@ import { formatDateTime } from "@/lib/datetime";
 import { Icon } from "@/lib/icons";
 import { lembreteConsulta } from "@/lib/whatsapp";
 import { WaButton } from "@/app/wa-button";
+import { particionaAgenda } from "@/lib/agenda";
 
 export const dynamic = "force-dynamic";
 
@@ -34,11 +35,10 @@ export default async function AgendaPage() {
     include: { patient: true },
   });
 
-  const now = new Date();
-  const upcoming = appointments.filter((a) => a.scheduledAt >= now || a.status === "agendada");
-  const past = appointments
-    .filter((a) => a.scheduledAt < now && a.status !== "agendada")
-    .reverse();
+  // O que separa pendente de histórico é o STATUS, não a data: uma consulta
+  // cancelada para semana que vem não é compromisso, e uma de ontem que
+  // ninguém marcou ainda precisa de uma ação.
+  const { pendentes: upcoming, historico: past } = particionaAgenda(appointments);
 
   const renderRows = (list: typeof appointments, showActions: boolean) =>
     list.map((a) => (
