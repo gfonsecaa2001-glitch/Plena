@@ -130,6 +130,24 @@ export function retomarContato(patientName: string, nutriName: string, diasSemVi
   ].join("\n");
 }
 
+export function pedirRecordatorio(
+  patientName: string,
+  nutriName: string,
+  dias: number,
+  link: string
+): string {
+  return [
+    `Oi, ${firstName(patientName)}!`,
+    "",
+    `Preciso saber o que você tem comido no dia a dia para ajustar seu plano. Dá para anotar ${dias === 1 ? "um dia" : `${dias} dias`} por aqui:`,
+    link,
+    "",
+    "Pode escrever do seu jeito, sem pesar nada. E anota o dia real — se comeu pizza, escreve pizza. É isso que me ajuda de verdade.",
+    "",
+    nutriName,
+  ].join("\n");
+}
+
 // Abertura neutra, para quando não há um assunto específico (nem consulta
 // marcada, nem cobrança). O nutricionista completa o resto no próprio app.
 export function saudacao(patientName: string, nutriName: string): string {

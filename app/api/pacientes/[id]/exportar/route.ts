@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionistOrNull } from "@/lib/tenant";
 import { parseMeals } from "@/lib/mealplan";
+import { parseDiario } from "@/lib/diary";
 
 // Exportação dos dados de um paciente (LGPD, art. 18, V — portabilidade).
 //
@@ -31,6 +32,7 @@ export async function GET(
       mealPlans: { orderBy: { createdAt: "asc" } },
       notes: { orderBy: { createdAt: "asc" } },
       charges: { orderBy: { createdAt: "asc" } },
+      foodDiaries: { orderBy: { createdAt: "asc" } },
     },
   });
 
@@ -100,6 +102,11 @@ export async function GET(
       titulo: p.title,
       criadoEm: p.createdAt,
       refeicoes: parseMeals(p.content),
+    })),
+    recordatorios: patient.foodDiaries.map((d) => ({
+      pedidoEm: d.createdAt,
+      respondidoEm: d.submittedAt,
+      dias: parseDiario(d.content),
     })),
     registrosClinicos: patient.notes.map((n) => ({
       tipo: n.kind,

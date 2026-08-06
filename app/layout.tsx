@@ -38,7 +38,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Páginas públicas (link de agendamento) nunca mostram o menu do sistema —
   // quem as vê é o paciente, não o nutricionista.
   const pathname = (await headers()).get("x-pathname") ?? "";
-  const isPublicPage = pathname.startsWith("/agendar") || pathname.startsWith("/plano/");
+  const isPublicPage =
+    pathname.startsWith("/agendar") ||
+    pathname.startsWith("/plano/") ||
+    pathname.startsWith("/recordatorio/");
 
   // Uma única chamada por requisição, compartilhada com a página (React cache).
   const me = isPublicPage ? null : await getCurrentNutritionistOrNull();

@@ -126,6 +126,33 @@ model Patient {
   mealPlans      MealPlan[]
   notes          Note[]
   charges        Charge[]
+  foodDiaries    FoodDiary[]
+}
+
+// Recordatório alimentar preenchido PELO PACIENTE, por link, sem login.
+//
+// Mesma máquina do link do plano: token longo, validade e revogação. A
+// diferença é o sentido — aqui o link ESCREVE no prontuário, então o
+// formulário público tem limite de tentativas por IP.
+model FoodDiary {
+  id        String   @id @default(cuid())
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  token     String?   @unique
+  expiresAt DateTime?
+  days      Int       @default(3)
+
+  // JSON: [{ data, tipico, obs, refeicoes: [{ nome, hora, texto }] }]
+  // Igual ao MealPlan.content — helpers em lib/diary.ts.
+  content String @default("[]")
+
+  // Enquanto for nulo, o paciente ainda está preenchendo e pode voltar ao
+  // link. Depois de enviado, o registro vira somente leitura.
+  submittedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([patientId])
 }
 
 // Registro clínico e anotações do acompanhamento.

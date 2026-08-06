@@ -1716,6 +1716,90 @@ th svg { vertical-align: -2px; margin-right: 5px; opacity: 0.7; }
 .rename-form input:hover { border-color: var(--line); background: var(--card); }
 .rename-form input:focus { border-color: var(--accent); background: var(--card); outline: none; }
 
+/* ===== Recordatório alimentar (tela do paciente) =====
+   Formulário longo, preenchido no celular. Campos grandes e espaçados: quem
+   está com o telefone na mão, em pé na cozinha, não acerta alvo pequeno. */
+.diary-intro {
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 16px;
+  margin-bottom: 18px;
+}
+.diary-intro p { margin: 0 0 6px; font-size: 13.5px; line-height: 1.55; }
+.diary-intro p:last-child { margin-bottom: 0; }
+
+.diary-day { padding: 18px 20px; }
+.diary-day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.diary-day-head h2 { margin: 0; font-size: 17px; }
+
+.diary-meal { margin-bottom: 14px; }
+.diary-meal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+.diary-meal-head label { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.diary-meal-head input[type="time"] { width: 108px; font-size: 12.5px; padding: 4px 8px; }
+/* Estes campos ficam fora da estrutura .field, então precisam do mesmo
+   tratamento — sem isso o navegador aplica o padrão dele (textarea sai em
+   fonte monoespaçada, o que parece formulário de sistema, não de paciente). */
+.diary-day input,
+.diary-meal textarea {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.diary-day input:focus,
+.diary-meal textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(74, 107, 53, 0.14);
+}
+.diary-meal textarea { width: 100%; resize: vertical; }
+.diary-day-foot input { width: 100%; }
+
+.diary-day-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+
+.diary-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 18px 0 8px;
+}
+
+/* Leitura do recordatório na ficha do paciente */
+.diary-read { border-left: 3px solid var(--accent); padding-left: 14px; margin-bottom: 16px; }
+.diary-read h4 { margin: 0 0 6px; font-size: 14px; }
+.diary-read-meal { font-size: 13.5px; margin-bottom: 5px; line-height: 1.5; }
+.diary-read-meal b { color: var(--accent); font-weight: 600; }
+
+@media (max-width: 560px) {
+  .diary-actions .btn { width: 100%; justify-content: center; }
+}
+
 /* ===== Compartilhamento do plano ===== */
 .share-box {
   display: flex;

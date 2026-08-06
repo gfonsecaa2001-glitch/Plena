@@ -19,6 +19,7 @@ import { StatusControl } from "./status-control";
 import { Privacidade } from "./privacidade";
 import { SkinfoldForm } from "./skinfold-form";
 import { Anamnese } from "./anamnese";
+import { Recordatorios } from "./recordatorios";
 
 // Cores da paleta validada (script do guia de dataviz — CVD e contraste ok
 // sobre o card #fdfdfa): série 1 verde-oliva, série 2 caramelo.
@@ -71,6 +72,7 @@ export default async function PatientPage({
       mealPlans: { orderBy: { createdAt: "desc" } },
       notes: { orderBy: { createdAt: "desc" } },
       charges: { orderBy: { createdAt: "desc" }, take: 8 },
+      foodDiaries: { orderBy: { createdAt: "desc" }, take: 5 },
     },
   });
 
@@ -175,6 +177,14 @@ export default async function PatientPage({
       />
 
       <Anamnese patient={patient} />
+
+      <Recordatorios
+        patientId={patient.id}
+        patientName={patient.name}
+        patientPhone={patient.phone}
+        nutriName={nutritionist.name}
+        diarios={patient.foodDiaries}
+      />
 
       {(() => {
         const weight = buildSeries(patient.measurements, "weightKg", "Peso", SERIES_COLORS[0]);

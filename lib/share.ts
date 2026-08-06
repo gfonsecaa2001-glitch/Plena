@@ -38,8 +38,14 @@ export function isShareActive(
 }
 
 // Endereço completo, para copiar e mandar no WhatsApp.
-export function shareUrl(token: string, baseUrl: string): string {
-  return `${baseUrl.replace(/\/+$/, "")}/plano/${token}`;
+//
+// A rota é parâmetro porque já existe mais de um tipo de link para o paciente
+// (o plano e o recordatório). Deixá-la fixa em "plano" fez o link do
+// recordatório apontar para a página errada.
+export type RotaPublica = "plano" | "recordatorio";
+
+export function shareUrl(token: string, baseUrl: string, rota: RotaPublica = "plano"): string {
+  return `${baseUrl.replace(/\/+$/, "")}/${rota}/${token}`;
 }
 
 // URL pública do sistema, montada do ambiente. Em produção a Vercel fornece

@@ -72,4 +72,12 @@ describe("shareUrl", () => {
       "https://plenacrm.vercel.app/plano/tok123"
     );
   });
+
+  // A rota já foi fixa em "plano", e o link do recordatório saiu apontando
+  // para a página do plano — o paciente abria e via "link indisponível".
+  it("monta o endereço da rota pedida", () => {
+    expect(shareUrl("tok123", "https://plenacrm.vercel.app", "recordatorio")).toBe(
+      "https://plenacrm.vercel.app/recordatorio/tok123"
+    );
+  });
 });

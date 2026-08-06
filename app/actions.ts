@@ -21,6 +21,7 @@ import { slugify } from "@/lib/booking";
 import { parseMoneyToCents } from "@/lib/money";
 import { generateShareToken, defaultExpiry } from "@/lib/share";
 import { lerPlanilha, chavesDuplicidade, jaVisto } from "@/lib/csv";
+import { diarioVazio, serializeDiario } from "@/lib/diary";
 
 function optional(value: FormDataEntryValue | null, max = 5000): string | null {
   const s = value?.toString().trim().slice(0, max);
@@ -676,6 +677,62 @@ export async function deletePatient(formData: FormData) {
   revalidatePath("/financeiro");
   revalidatePath("/");
   redirect("/pacientes?excluido=1");
+}
+
+// ---------- Recordatório alimentar ----------
+
+// Cria o pedido e o link que o paciente vai abrir no celular.
+export async function createFoodDiary(formData: FormData) {
+  const patientId = formData.get("patientId")!.toString();
+  if (!(await requireOwnPatient(patientId))) return;
+
+  const dias = optionalNumber(formData.get("days")) ?? 3;
+
+  await prisma.foodDiary.create({
+    data: {
+      patientId,
+      days: Math.min(Math.max(Math.round(dias), 1), 7),
+      token: generateShareToken(),
+      // Prazo curto de propósito: recordatório é retrato de um momento. Um
+      // link de 90 dias viraria resposta desatualizada chegando sozinha.
+      expiresAt: new Date(Date.now() + 30 * 86400000),
+      content: serializeDiario(diarioVazio(dias, todayISO())),
+    },
+  });
+
+  revalidatePath(`/pacientes/${patientId}`);
+}
+
+// Desliga o link. O que já foi respondido continua no prontuário — desligar
+// o acesso não é apagar o registro clínico.
+export async function revokeFoodDiary(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+  const id = formData.get("id")!.toString();
+
+  const diario = await prisma.foodDiary.findFirst({
+    where: { id, patient: { nutritionistId: nutritionist.id } },
+  });
+  if (!diario) return;
+
+  await prisma.foodDiary.update({
+    where: { id },
+    data: { token: null, expiresAt: null },
+  });
+
+  revalidatePath(`/pacientes/${diario.patientId}`);
+}
+
+export async function deleteFoodDiary(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+  const id = formData.get("id")!.toString();
+
+  const diario = await prisma.foodDiary.findFirst({
+    where: { id, patient: { nutritionistId: nutritionist.id } },
+  });
+  if (!diario) return;
+
+  await prisma.foodDiary.delete({ where: { id } });
+  revalidatePath(`/pacientes/${diario.patientId}`);
 }
 
 // ---------- Perfil profissional ----------
