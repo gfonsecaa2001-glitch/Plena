@@ -35,6 +35,13 @@ model Nutritionist {
   bookingStart   Int      @default(8) // primeira hora atendida
   bookingEnd     Int      @default(18) // última hora (exclusiva)
   bookingSlotMin Int      @default(60) // duração de cada encaixe, em minutos
+
+  // Intervalo diário (almoço), em MINUTOS desde a meia-noite. Em minutos, e
+  // não em horas, porque almoço de verdade termina 13:30.
+  breakStartMin Int?
+  breakEndMin   Int?
+
+  agendaBlocks AgendaBlock[]
   patients     Patient[]
   appointments Appointment[]
   charges      Charge[]
@@ -225,6 +232,24 @@ model Food {
 
   @@index([name])
   @@index([nutritionistId])
+}
+
+// Período em que o nutricionista NÃO atende: férias, congresso, uma tarde de
+// folga, um feriado que ele resolveu emendar.
+//
+// Vale só para o link público. O agendamento interno continua livre — se o
+// nutricionista quiser abrir uma exceção durante as férias, o sistema não é
+// quem deve impedir.
+model AgendaBlock {
+  id             String       @id @default(cuid())
+  nutritionistId String
+  nutritionist   Nutritionist @relation(fields: [nutritionistId], references: [id], onDelete: Cascade)
+  start          DateTime
+  end            DateTime
+  reason         String? // "Férias", "Congresso" — só para ele se lembrar
+  createdAt      DateTime     @default(now())
+
+  @@index([nutritionistId, start])
 }
 
 // Modelo de plano: a estrutura pronta que o nutricionista reaproveita.

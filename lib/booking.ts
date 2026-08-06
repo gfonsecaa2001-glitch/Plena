@@ -23,7 +23,21 @@ export type BookingConfig = {
   bookingStart: number;
   bookingEnd: number;
   bookingSlotMin: number;
+  // Intervalo diário (almoço), em minutos desde a meia-noite. 12:00 = 720.
+  // Em minutos, e não em horas, porque almoço de verdade termina 13:30.
+  breakStartMin?: number | null;
+  breakEndMin?: number | null;
 };
+
+// Período indisponível: férias, congresso, uma tarde de folga.
+export type Intervalo = { start: Date; end: Date };
+
+// Dois períodos se sobrepõem quando um começa antes do outro terminar.
+// O fim é exclusivo: uma consulta que termina 11:00 não conflita com outra
+// que começa 11:00.
+function sobrepoe(aInicio: number, aFim: number, bInicio: number, bFim: number): boolean {
+  return aInicio < bFim && aFim > bInicio;
+}
 
 // Dia da semana (1=segunda … 7=domingo) de uma data ISO, no fuso do Brasil.
 function weekday(isoDay: string): number {
@@ -41,7 +55,8 @@ export function buildSlots(
   config: BookingConfig,
   busy: Date[],
   todayIso: string,
-  now: Date
+  now: Date,
+  blocks: Intervalo[] = []
 ): DaySlots[] {
   const openDays = new Set(
     config.bookingDays
@@ -49,8 +64,19 @@ export function buildSlots(
       .map((d) => Number(d.trim()))
       .filter(Boolean)
   );
-  // Guarda os horários ocupados como texto ISO para comparar rápido.
-  const busySet = new Set(busy.map((b) => b.toISOString()));
+
+  const stepMs = config.bookingSlotMin * 60_000;
+
+  // Consulta ocupada é um PERÍODO, não um instante.
+  //
+  // Comparar só o horário de início deixava passar o caso real: o
+  // nutricionista marca 10:30 na mão (o campo aceita qualquer minuto) e o
+  // encaixe público das 10:00–11:00 continuava sendo oferecido — duas
+  // pessoas na mesma sala.
+  const ocupados: Intervalo[] = busy.map((inicio) => ({
+    start: inicio,
+    end: new Date(inicio.getTime() + stepMs),
+  }));
 
   const days: DaySlots[] = [];
 
@@ -59,7 +85,6 @@ export function buildSlots(
     if (!openDays.has(weekday(isoDay))) continue;
 
     const slots: { iso: string; label: string }[] = [];
-    const stepMs = config.bookingSlotMin * 60_000;
     const dayStart = new Date(
       `${isoDay}T${String(config.bookingStart).padStart(2, "0")}:00:00${OFFSET}`
     );
@@ -69,8 +94,23 @@ export function buildSlots(
 
     for (let t = dayStart.getTime(); t + stepMs <= dayEnd.getTime(); t += stepMs) {
       const slot = new Date(t);
+      const fim = t + stepMs;
       if (slot.getTime() <= now.getTime()) continue; // já passou
-      if (busySet.has(slot.toISOString())) continue; // ocupado
+
+      // Ocupado por uma consulta — mesmo que ela comece "fora da grade".
+      if (ocupados.some((o) => sobrepoe(t, fim, o.start.getTime(), o.end.getTime()))) continue;
+
+      // Dentro de um período bloqueado (férias, congresso, tarde de folga).
+      if (blocks.some((b) => sobrepoe(t, fim, b.start.getTime(), b.end.getTime()))) continue;
+
+      // Dentro do intervalo diário. O minuto do dia vem da própria contagem
+      // do laço, sem formatar data — não há como o fuso atrapalhar.
+      if (config.breakStartMin != null && config.breakEndMin != null) {
+        const minutoInicio = config.bookingStart * 60 + (t - dayStart.getTime()) / 60_000;
+        const minutoFim = minutoInicio + config.bookingSlotMin;
+        if (sobrepoe(minutoInicio, minutoFim, config.breakStartMin, config.breakEndMin)) continue;
+      }
+
       slots.push({
         iso: slot.toISOString(),
         label: slot.toLocaleTimeString("pt-BR", {

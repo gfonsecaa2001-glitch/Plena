@@ -1,6 +1,9 @@
+import { prisma } from "@/lib/prisma";
 import { getCurrentNutritionist } from "@/lib/tenant";
 import { slugify } from "@/lib/booking";
-import { saveBookingSettings } from "@/app/actions";
+import { formatDate } from "@/lib/datetime";
+import { Icon } from "@/lib/icons";
+import { saveBookingSettings, addAgendaBlock, deleteAgendaBlock } from "@/app/actions";
 import { CopyLink } from "./copy-link";
 
 export const dynamic = "force-dynamic";
@@ -15,10 +18,22 @@ const DAYS = [
   { value: "7", label: "Dom" },
 ];
 
+// 720 → "12:00". Vazio quando não há intervalo configurado.
+function horaDeMinutos(min: number | null): string {
+  if (min == null) return "";
+  return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+}
+
 export default async function BookingSettingsPage() {
   const n = await getCurrentNutritionist();
   const active = new Set(n.bookingDays.split(","));
   const slug = n.bookingSlug ?? slugify(n.name);
+
+  // Só o que ainda importa: bloqueio que já terminou é histórico inútil aqui.
+  const blocks = await prisma.agendaBlock.findMany({
+    where: { nutritionistId: n.id, end: { gte: new Date() } },
+    orderBy: { start: "asc" },
+  });
 
   return (
     <>
@@ -96,6 +111,31 @@ export default async function BookingSettingsPage() {
             </div>
           </div>
 
+          <div className="grid-2">
+            <div className="field">
+              <label htmlFor="breakStart">Intervalo — começa às</label>
+              <input
+                id="breakStart"
+                name="breakStart"
+                type="time"
+                defaultValue={horaDeMinutos(n.breakStartMin)}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="breakEnd">Intervalo — termina às</label>
+              <input
+                id="breakEnd"
+                name="breakEnd"
+                type="time"
+                defaultValue={horaDeMinutos(n.breakEndMin)}
+              />
+            </div>
+          </div>
+          <span className="field-hint" style={{ marginTop: -6 }}>
+            Almoço ou pausa fixa. Deixe vazio se não tiver. Nenhum encaixe que invada esse
+            período é oferecido.
+          </span>
+
           <div className="field">
             <label htmlFor="slotMin">Duração de cada consulta</label>
             <select id="slotMin" name="slotMin" defaultValue={String(n.bookingSlotMin)}>
@@ -112,6 +152,68 @@ export default async function BookingSettingsPage() {
             </button>
           </div>
         </form>
+      </div>
+
+      <div className="panel">
+        <h2>Períodos sem atendimento</h2>
+        <p className="muted" style={{ marginTop: -10, fontSize: 13.5 }}>
+          Férias, congresso, uma tarde de folga. Nesses dias o link não oferece horário
+          nenhum. Você continua podendo marcar manualmente pela ficha do paciente — o
+          bloqueio vale só para quem agenda sozinho.
+        </p>
+
+        <form className="inline-form" action={addAgendaBlock}>
+          <div className="field">
+            <label htmlFor="de">De</label>
+            <input id="de" name="de" type="date" required />
+          </div>
+          <div className="field">
+            <label htmlFor="ate">Até</label>
+            <input id="ate" name="ate" type="date" required />
+          </div>
+          <div className="field" style={{ flex: 1, minWidth: 170 }}>
+            <label htmlFor="reason">Motivo</label>
+            <input id="reason" name="reason" placeholder="Férias, congresso… (opcional)" />
+          </div>
+          <button className="btn small" type="submit">
+            <Icon name="plus" size={13} /> Bloquear
+          </button>
+        </form>
+
+        {blocks.length === 0 ? (
+          <p className="empty">Nenhum período bloqueado.</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Período</th>
+                <th>Motivo</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {blocks.map((b) => (
+                <tr key={b.id}>
+                  <td>
+                    {/* O fim é guardado como a meia-noite do dia seguinte;
+                        mostramos o último dia realmente bloqueado. */}
+                    {formatDate(b.start)} até{" "}
+                    {formatDate(new Date(b.end.getTime() - 86400000))}
+                  </td>
+                  <td>{b.reason ?? "—"}</td>
+                  <td style={{ textAlign: "right" }}>
+                    <form action={deleteAgendaBlock}>
+                      <input type="hidden" name="id" value={b.id} />
+                      <button className="btn small secondary danger" type="submit">
+                        <Icon name="trash" size={13} /> Remover
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <p className="privacy-note">

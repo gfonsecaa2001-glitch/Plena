@@ -56,20 +56,28 @@ export default async function PublicBookingPage({
       bookingStart: true,
       bookingEnd: true,
       bookingSlotMin: true,
+      breakStartMin: true,
+      breakEndMin: true,
     },
   });
 
   if (!nutritionist) notFound();
 
-  const busy = nutritionist.bookingEnabled
-    ? await prisma.appointment.findMany({
-        where: { nutritionistId: nutritionist.id, status: { not: "cancelada" } },
-        select: { scheduledAt: true },
-      })
-    : [];
+  const [busy, blocks] = nutritionist.bookingEnabled
+    ? await Promise.all([
+        prisma.appointment.findMany({
+          where: { nutritionistId: nutritionist.id, status: { not: "cancelada" } },
+          select: { scheduledAt: true },
+        }),
+        prisma.agendaBlock.findMany({
+          where: { nutritionistId: nutritionist.id, end: { gte: new Date() } },
+          select: { start: true, end: true },
+        }),
+      ])
+    : [[], []];
 
   const days = nutritionist.bookingEnabled
-    ? buildSlots(nutritionist, busy.map((b) => b.scheduledAt), todayISO(), new Date())
+    ? buildSlots(nutritionist, busy.map((b) => b.scheduledAt), todayISO(), new Date(), blocks)
     : [];
 
   return (

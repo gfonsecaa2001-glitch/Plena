@@ -289,9 +289,77 @@ export async function saveBookingSettings(formData: FormData) {
       bookingStart: Math.min(Math.max(start, 0), 23),
       bookingEnd: Math.min(Math.max(end, start + 1), 24),
       bookingSlotMin: [30, 45, 60, 90].includes(slotMin) ? slotMin : 60,
+      ...intervaloDoFormulario(formData),
     },
   });
 
+  revalidatePath("/agendamento");
+}
+
+// Intervalo diário: dois campos <input type="time"> viram minutos desde a
+// meia-noite. Se qualquer um faltar, ou o fim não for depois do início, o
+// intervalo é apagado — meia configuração produziria buraco na agenda sem
+// explicação.
+function intervaloDoFormulario(formData: FormData): {
+  breakStartMin: number | null;
+  breakEndMin: number | null;
+} {
+  const inicio = minutosDoDia(formData.get("breakStart"));
+  const fim = minutosDoDia(formData.get("breakEnd"));
+  if (inicio === null || fim === null || fim <= inicio) {
+    return { breakStartMin: null, breakEndMin: null };
+  }
+  return { breakStartMin: inicio, breakEndMin: fim };
+}
+
+function minutosDoDia(valor: FormDataEntryValue | null): number | null {
+  const texto = optional(valor, 5);
+  if (!texto) return null;
+  const m = texto.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h > 23 || min > 59) return null;
+  return h * 60 + min;
+}
+
+// ---------- Períodos sem atendimento ----------
+
+export async function addAgendaBlock(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+
+  const de = optional(formData.get("de"));
+  const ate = optional(formData.get("ate"));
+  if (!de || !ate) return;
+
+  // Datas inclusivas: bloquear "05/08 a 09/08" precisa cobrir o dia 09 inteiro,
+  // e não parar à meia-noite que o começa.
+  const start = parseDateInput(de);
+  const end = new Date(parseDateInput(ate).getTime() + 86400000);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) return;
+
+  await prisma.agendaBlock.create({
+    data: {
+      nutritionistId: nutritionist.id,
+      start,
+      end,
+      reason: optional(formData.get("reason"), 80),
+    },
+  });
+
+  revalidatePath("/agendamento");
+}
+
+export async function deleteAgendaBlock(formData: FormData) {
+  const nutritionist = await getCurrentNutritionist();
+  const id = formData.get("id")!.toString();
+
+  const meu = await prisma.agendaBlock.findFirst({
+    where: { id, nutritionistId: nutritionist.id },
+  });
+  if (!meu) return;
+
+  await prisma.agendaBlock.delete({ where: { id } });
   revalidatePath("/agendamento");
 }
 

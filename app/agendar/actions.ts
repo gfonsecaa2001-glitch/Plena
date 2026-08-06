@@ -58,11 +58,23 @@ export async function bookPublicAppointment(formData: FormData) {
   // REVALIDAÇÃO: o formulário pode ter sido adulterado, ou alguém pode ter
   // marcado o mesmo horário enquanto esta pessoa preenchia os dados.
   // Recalculamos os horários livres e conferimos se este ainda está na lista.
-  const busy = await prisma.appointment.findMany({
-    where: { nutritionistId: nutritionist.id, status: { not: "cancelada" } },
-    select: { scheduledAt: true },
-  });
-  const days = buildSlots(nutritionist, busy.map((b) => b.scheduledAt), todayISO(), new Date());
+  const [busy, blocks] = await Promise.all([
+    prisma.appointment.findMany({
+      where: { nutritionistId: nutritionist.id, status: { not: "cancelada" } },
+      select: { scheduledAt: true },
+    }),
+    prisma.agendaBlock.findMany({
+      where: { nutritionistId: nutritionist.id, end: { gte: new Date() } },
+      select: { start: true, end: true },
+    }),
+  ]);
+  const days = buildSlots(
+    nutritionist,
+    busy.map((b) => b.scheduledAt),
+    todayISO(),
+    new Date(),
+    blocks
+  );
   const stillFree = days.some((d) => d.slots.some((s) => s.iso === slot.toISOString()));
   if (!stillFree) redirect(`/agendar/${slug}?erro=ocupado`);
 
